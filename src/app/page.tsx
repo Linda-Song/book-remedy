@@ -4,19 +4,20 @@ import Bubble from "@/components/ui/Bubble";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { useRouter } from "next/navigation";
-
-const MOODS = [
-  { key: "comfort", label: "Need comfort" },
-  { key: "excited", label: "Feel excited" },
-  { key: "thrill", label: "Want a thrill" },
-  { key: "calm", label: "Want calm" },
-  { key: "think", label: "Deep thoughts" },
-  { key: "laugh", label: "Want to laugh" },
-];
+import MoodButton from "@/components/ui/MoodButton";
+import { MOOD_SETS } from "./data/moods";
+import { Pencil } from "lucide-react";
+import Image from "next/image";
 
 export default function Home() {
-  const [selected, setSelected] = useState<string | null>(null);
   const router = useRouter();
+  const [selected, setSelected] = useState<string | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const currentMoods = MOOD_SETS[selectedIndex];
+  const bubbleText = selected
+    ? "Good choice! Ready when you are."
+    : "Hi! How are you feeling today?";
+
   return (
     <div className="flex items-center gap-16 justify-center">
       {/* left  */}
@@ -25,33 +26,47 @@ export default function Home() {
           <div className="absolute rounded-full inset-0 bg-bg-tint -z-10" />
           <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-full flex justify-center">
             <Bubble>
-              <span className="text-2xl font-bold">
-                Hi! How are you feeling today?
-              </span>
+              <span className="text-2xl font-bold">{bubbleText}</span>
             </Bubble>
+          </div>
+          <div className="absolute inset-0 flex items-center pb-12 justify-center">
+            <Image
+              src="/caterpillar_first.png"
+              alt="caterpillar"
+              width={440}
+              height={149}
+            ></Image>
           </div>
         </div>
       </div>
 
       <div>
         <div className="grid grid-cols-3 gap-4 w-[560px]">
-          {MOODS.map((mood) => (
-            <Button
+          {currentMoods.map((mood) => (
+            <MoodButton
               key={mood.key}
-              variant="tile"
+              icon={mood.icon}
+              label={mood.label}
+              description={mood.description}
               selected={selected === mood.key}
               onClick={() => setSelected(mood.key)}
-              className="w-full h-[134px] flex items-center justify-center text-lg font-bold"
-            >
-              {mood.label}
-            </Button>
+            />
           ))}
         </div>
         <div className="flex gap-3 mt-2 ">
-          <Button variant="tile" className="w-full h-[60px]">
-            More moods
+          <Button
+            variant="tile"
+            onClick={() => setSelectedIndex((prev) => (prev === 0 ? 1 : 0))}
+            className="w-full h-[60px]"
+          >
+            {selectedIndex === 0 ? "More" : "Back"}
           </Button>
-          <Button variant="tile" className="w-full h-[60px]">
+
+          <Button
+            variant="dashed"
+            className="w-full h-[60px] flex items-center justify-center"
+          >
+            <Pencil size={18} className="mr-2" />
             Something else
           </Button>
         </div>
