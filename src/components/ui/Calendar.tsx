@@ -48,7 +48,7 @@ export function Calendar({
         </div>
       </div>
 
-      <div className="grid grid-col-7 mb-2">
+      <div className="grid grid-cols-7 mb-2">
         {WEEKDAYS.map((day) => (
           <div
             key={day}
