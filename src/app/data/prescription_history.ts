@@ -5,6 +5,7 @@ export type PrescriptionRecord = {
   mood: string;
   genre: string;
   status: "To read" | "Reading" | "Finished";
+  coverColor: string;
 };
 
 export const PRESCRIPTION_DAYS = [3, 7, 8, 12, 15, 19, 20, 21];
@@ -17,6 +18,7 @@ export const PRESCRIPTION_HISTORY: Record<number, PrescriptionRecord[]> = {
       mood: "Want to laugh",
       genre: "Fiction",
       status: "Finished",
+      coverColor: "#C3E978",
     },
   ],
   7: [
@@ -26,6 +28,7 @@ export const PRESCRIPTION_HISTORY: Record<number, PrescriptionRecord[]> = {
       mood: "Deep thoughts",
       genre: "Fiction",
       status: "Finished",
+      coverColor: "#16332E",
     },
   ],
   8: [
@@ -35,6 +38,7 @@ export const PRESCRIPTION_HISTORY: Record<number, PrescriptionRecord[]> = {
       mood: "Feel excited",
       genre: "Fantasy",
       status: "Reading",
+      coverColor: "#F6E39A",
     },
   ],
   12: [
@@ -44,6 +48,7 @@ export const PRESCRIPTION_HISTORY: Record<number, PrescriptionRecord[]> = {
       mood: "Want calm",
       genre: "Fiction",
       status: "To read",
+      coverColor: "#8FCBB8",
     },
   ],
   15: [
@@ -53,6 +58,7 @@ export const PRESCRIPTION_HISTORY: Record<number, PrescriptionRecord[]> = {
       mood: "Need comfort",
       genre: "Memoir",
       status: "Finished",
+      coverColor: "#F2B0A4",
     },
   ],
   19: [
@@ -62,6 +68,7 @@ export const PRESCRIPTION_HISTORY: Record<number, PrescriptionRecord[]> = {
       mood: "Need to escape",
       genre: "Mystery",
       status: "To read",
+      coverColor: "#8FB1DE",
     },
   ],
   20: [
@@ -71,6 +78,7 @@ export const PRESCRIPTION_HISTORY: Record<number, PrescriptionRecord[]> = {
       mood: "Need comfort",
       genre: "Fiction",
       status: "To read",
+      coverColor: "#16332E",
     },
   ],
   21: [
@@ -80,6 +88,7 @@ export const PRESCRIPTION_HISTORY: Record<number, PrescriptionRecord[]> = {
       mood: "Need comfort",
       genre: "Fiction",
       status: "To read",
+      coverColor: "#16332E",
     },
     {
       title: "A Year of Small Mercies",
@@ -87,6 +96,7 @@ export const PRESCRIPTION_HISTORY: Record<number, PrescriptionRecord[]> = {
       mood: "Need comfort",
       genre: "Memoir",
       status: "To read",
+      coverColor: "#F2B0A4",
     },
   ],
 };

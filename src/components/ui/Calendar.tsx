@@ -58,7 +58,7 @@ export function Calendar({
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-y-1">
+      <div className="grid grid-cols-7 gap-2">
         {leadingDays.map((day) => (
           <div
             key={`prev-${day}`}

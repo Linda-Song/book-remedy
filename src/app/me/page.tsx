@@ -35,12 +35,13 @@ export default function Me() {
       </div>
 
       <div className="flex gap-6 mt-8">
-        <Calendar
-          prescriptionDays={PRESCRIPTION_DAYS}
-          selectedDay={selectedDay}
-          onSelectDay={setSelectedDay}
-        />
-
+        <div className="w-[380px] flex-shrink-0">
+          <Calendar
+            prescriptionDays={PRESCRIPTION_DAYS}
+            selectedDay={selectedDay}
+            onSelectDay={setSelectedDay}
+          />
+        </div>
         {/* right */}
         <div className="flex flex-col gap-4 flex-1 min-w-0">
           {/* stats */}
@@ -75,7 +76,12 @@ export default function Me() {
                   key={i}
                   className="flex items-center justify-between py-3 border-t border-border-light first:border-t-0"
                 >
-                  <div>
+                  <div
+                    className="w-[44px] h-[64px] rounded-md flex-shrink-0 mr-4 "
+                    style={{ backgroundColor: book.coverColor }}
+                  />
+
+                  <div className="flex-1 min-w-0">
                     <p className="font-bold text-sm text-text-primary">
                       {book.title}
                     </p>
