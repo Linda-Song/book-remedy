@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Calendar } from "@/components/ui/Calendar";
+import { useRouter } from "next/navigation";
 import {
   PRESCRIPTION_DAYS,
   PRESCRIPTION_HISTORY,
@@ -14,6 +15,7 @@ const STATS = [
 ];
 
 export default function Me() {
+  const router = useRouter();
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const dayRecords = selectedDay ? PRESCRIPTION_HISTORY[selectedDay] : null;
 
@@ -65,7 +67,10 @@ export default function Me() {
               <p className="text-base font-bold text-text-primary">
                 {selectedDay ? `Sep ${selectedDay}` : "Select a date"}
               </p>
-              <button className="text-xs font-bold text-green-dark">
+              <button
+                onClick={() => router.push("/history")}
+                className="text-xs font-bold text-green-dark"
+              >
                 View all
               </button>
             </div>

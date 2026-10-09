@@ -8,7 +8,7 @@ export type PrescriptionRecord = {
   coverColor: string;
 };
 
-export const PRESCRIPTION_DAYS = [3, 7, 8, 12, 15, 19, 20, 21];
+export const PRESCRIPTION_DAYS = [3, 5, 6, 7, 8, 9, 12, 15, 19, 20, 21];
 
 export const PRESCRIPTION_HISTORY: Record<number, PrescriptionRecord[]> = {
   3: [
@@ -21,6 +21,26 @@ export const PRESCRIPTION_HISTORY: Record<number, PrescriptionRecord[]> = {
       coverColor: "#C3E978",
     },
   ],
+  5: [
+    {
+      title: "The Midnight Library",
+      author: "Matt Haig",
+      mood: "Need comfort",
+      genre: "Fiction",
+      status: "To read",
+      coverColor: "#16332E",
+    },
+  ],
+  6: [
+    {
+      title: "The Midnight Library",
+      author: "Matt Haig",
+      mood: "Need comfort",
+      genre: "Fiction",
+      status: "To read",
+      coverColor: "#16332E",
+    },
+  ],
   7: [
     {
       title: "Every Window Lit",
@@ -31,6 +51,7 @@ export const PRESCRIPTION_HISTORY: Record<number, PrescriptionRecord[]> = {
       coverColor: "#16332E",
     },
   ],
+
   8: [
     {
       title: "The Lantern Keeper",
@@ -39,6 +60,16 @@ export const PRESCRIPTION_HISTORY: Record<number, PrescriptionRecord[]> = {
       genre: "Fantasy",
       status: "Reading",
       coverColor: "#F6E39A",
+    },
+  ],
+  9: [
+    {
+      title: "The Last Lighthouse Post",
+      author: "Mara Quinn",
+      mood: "Need to escape",
+      genre: "Mystery",
+      status: "To read",
+      coverColor: "#8FB1DE",
     },
   ],
   12: [
