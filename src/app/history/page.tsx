@@ -1,8 +1,10 @@
 "use client";
 import { useState } from "react";
 import { ALL_PRESCRIPTIONS } from "../data/all_prescriptions";
-import { Grid2x2, List, ChevronLeft, ChevronRight } from "lucide-react";
+import { Grid2x2, List, ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { ST } from "next/dist/shared/lib/utils";
+
 const FILTERS = [
   "All",
   "To read",
@@ -107,6 +109,18 @@ export default function HistoryPage() {
               <p className="text-[11px] text-text-muted truncate">
                 {book.author}
               </p>
+              {book.review && (
+                <div className="flex items-center gap-0.5 mt-1">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star
+                      key={i}
+                      size={10}
+                      fill={i < book.review!.rating ? "#FFC93C" : "none"}
+                      stroke="#FFC93C"
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -131,6 +145,18 @@ export default function HistoryPage() {
               <span className="text-xs text-text-muted flex-shrink-0">
                 {book.date}
               </span>
+              {book.review && (
+                <div className="flex items-center gap-0.5 flex-shrink-0">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star
+                      key={i}
+                      size={12}
+                      fill={i < book.review!.rating ? "#FFC93C" : "none"}
+                      stroke="#FFC93C"
+                    />
+                  ))}
+                </div>
+              )}
               <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-bg-tint text-text-secondary flex-shrink-0">
                 {book.status}
               </span>

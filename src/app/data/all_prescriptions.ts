@@ -11,6 +11,16 @@ export type PrescriptionRecord = {
   about: string;
   reason: string;
   freeText: string;
+  startedDate?: string;
+  finishedDate?: string;
+  review?: {
+    rating: number;
+    shareLine: string;
+    quotePage?: number;
+    quoteText?: string;
+    text: string;
+    isPublic: boolean;
+  };
 };
 
 export const ALL_PRESCRIPTIONS: PrescriptionRecord[] = [
@@ -18,7 +28,7 @@ export const ALL_PRESCRIPTIONS: PrescriptionRecord[] = [
     id: 1,
     title: "The Midnight Library",
     author: "Matt Haig",
-    publisher: "Canongate ",
+    publisher: "Canongate · 2020 · 304 pages · English",
     mood: "Need comfort",
     genre: "Fiction",
     status: "To read",
@@ -61,6 +71,7 @@ export const ALL_PRESCRIPTIONS: PrescriptionRecord[] = [
     reason:
       "You wanted something fast and fun. This story moves quickly, with a new surprise waiting behind every chapter.",
     freeText: "Need something to keep me up late in a good way.",
+    startedDate: "Sep 19, 2026",
   },
   {
     id: 4,
@@ -77,6 +88,16 @@ export const ALL_PRESCRIPTIONS: PrescriptionRecord[] = [
     reason:
       "You said you needed comfort, not answers. This book doesn't try to fix anything — it just sits beside you.",
     freeText: "Hard month. Not looking for advice, just company.",
+    startedDate: "Sep 13, 2026",
+    finishedDate: "Sep 15, 2026",
+    review: {
+      rating: 4,
+      shareLine: "Exactly the quiet company I needed this month.",
+      quotePage: 88,
+      quoteText: "Some days the only job is to notice one small kindness.",
+      text: "Didn't expect to tear up so much over such an ordinary year. It never rushes to comfort you, it just sits there with you, which is what I needed.",
+      isPublic: true,
+    },
   },
   {
     id: 5,
@@ -93,6 +114,16 @@ export const ALL_PRESCRIPTIONS: PrescriptionRecord[] = [
     reason:
       "You wanted to laugh. This book is full of warm, silly moments and characters who mean well even when they meddle.",
     freeText: "Just want something light and funny.",
+    startedDate: "Sep 12, 2026",
+    finishedDate: "Sep 15, 2026",
+    review: {
+      rating: 5,
+      shareLine: "I read it in two evenings and didn't want it to end.",
+      quotePage: 142,
+      quoteText: "Some day you'll understand why rain feels like company.",
+      text: "Slow, warm and full of small kindnesses. The orchard scenes stayed with me for days, and the ending felt just right.",
+      isPublic: false,
+    },
   },
   {
     id: 6,
@@ -109,6 +140,7 @@ export const ALL_PRESCRIPTIONS: PrescriptionRecord[] = [
     reason:
       "You wanted something to think about. This book lingers on small moments and asks what connects strangers living side by side.",
     freeText: "In a reflective mood tonight.",
+    startedDate: "Sep 8, 2026",
   },
   {
     id: 7,
@@ -157,6 +189,7 @@ export const ALL_PRESCRIPTIONS: PrescriptionRecord[] = [
     reason:
       "You wanted something fast and fun. This story moves quickly, with a new surprise waiting behind every chapter.",
     freeText: "Need something to keep me up late in a good way.",
+    startedDate: "Sep 19, 2026",
   },
   {
     id: 10,
@@ -173,6 +206,14 @@ export const ALL_PRESCRIPTIONS: PrescriptionRecord[] = [
     reason:
       "You said you needed comfort, not answers. This book doesn't try to fix anything — it just sits beside you.",
     freeText: "Hard month. Not looking for advice, just company.",
+    startedDate: "Sep 12, 2026",
+    finishedDate: "Sep 15, 2026",
+    review: {
+      rating: 4,
+      shareLine: "A quiet book that stayed with me longer than I expected.",
+      text: "Gentle and unhurried. Didn't solve anything for me, but it kept me company through a hard week.",
+      isPublic: false,
+    },
   },
   {
     id: 11,
@@ -189,6 +230,16 @@ export const ALL_PRESCRIPTIONS: PrescriptionRecord[] = [
     reason:
       "You wanted to laugh. This book is full of warm, silly moments and characters who mean well even when they meddle.",
     freeText: "Just want something light and funny.",
+    startedDate: "Sep 9, 2026",
+    finishedDate: "Sep 12, 2026",
+    review: {
+      rating: 5,
+      shareLine: "Laughed out loud more than once, exactly what I needed.",
+      quotePage: 61,
+      quoteText: "The orchard did not need saving. It needed company.",
+      text: "Warm, silly, and surprisingly moving by the end. The neighbors were a mess in the best way.",
+      isPublic: true,
+    },
   },
   {
     id: 12,
@@ -205,6 +256,7 @@ export const ALL_PRESCRIPTIONS: PrescriptionRecord[] = [
     reason:
       "You wanted something to think about. This book lingers on small moments and asks what connects strangers living side by side.",
     freeText: "In a reflective mood tonight.",
+    startedDate: "Sep 8, 2026",
   },
   {
     id: 13,
@@ -253,6 +305,7 @@ export const ALL_PRESCRIPTIONS: PrescriptionRecord[] = [
     reason:
       "You wanted something fast and fun. This story moves quickly, with a new surprise waiting behind every chapter.",
     freeText: "Need something to keep me up late in a good way.",
+    startedDate: "Sep 19, 2026",
   },
   {
     id: 16,
@@ -301,5 +354,6 @@ export const ALL_PRESCRIPTIONS: PrescriptionRecord[] = [
     reason:
       "You wanted something fast and fun. This story moves quickly, with a new surprise waiting behind every chapter.",
     freeText: "Need something to keep me up late in a good way.",
+    startedDate: "Sep 19, 2026",
   },
 ];

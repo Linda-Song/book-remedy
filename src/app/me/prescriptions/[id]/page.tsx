@@ -7,6 +7,8 @@ import { WhatYouToldMe } from "@/components/prescription/WhatYouToldMe";
 import { Button } from "@/components/ui/Button";
 import { ChevronLeft, Pencil } from "lucide-react";
 import { ALL_PRESCRIPTIONS } from "@/app/data/all_prescriptions";
+import { StarRating } from "@/components/prescription/StarRating";
+import { ReviewSummary } from "@/components/prescription/ReviewSummary";
 
 const STATUSES = ["To read", "Reading", "Finished", "Not for me"] as const;
 
@@ -29,20 +31,21 @@ export default function PrescriptionDetailPage() {
       >
         <ChevronLeft size={16} /> My prescriptions
       </button>
+
       <div className="flex gap-16">
-        {/* 왼쪽: 표지 + 버튼 */}
+        {/* left: cover + rating + button */}
         <div className="flex flex-col items-center flex-shrink-0">
           <div
-            className="w-[200px] h-[313px] rounded-md mb-6"
+            className="w-[200px] h-[313px] rounded-md mb-4"
             style={{ backgroundColor: book.coverColor }}
           />
+          {book.review && <StarRating rating={book.review.rating} />}
           <Button variant="outline" className="rounded-sm h-8 w-[180px]">
             Find on Kindle
           </Button>
         </div>
 
-        {/* 오른쪽: 정보 */}
-        {/* 오른쪽: 정보 */}
+        {/* right: info */}
         <div className="flex flex-col flex-1 min-w-0">
           <div className="flex items-center justify-between mb-4">
             <div className="flex gap-2">
@@ -63,6 +66,14 @@ export default function PrescriptionDetailPage() {
             about={book.about}
           />
 
+          {book.startedDate && (
+            <p className="text-xs text-text-muted mb-4 -mt-2">
+              Started {book.startedDate}
+              {" - "}
+              {book.finishedDate ? `Finished ${book.finishedDate}` : "Ongoing"}
+            </p>
+          )}
+
           <WhatYouToldMe
             mood={book.mood}
             genre={book.genre}
@@ -70,6 +81,15 @@ export default function PrescriptionDetailPage() {
           />
 
           <WhyThisBook reason={book.reason} />
+
+          {book.review && (
+            <ReviewSummary
+              shareLine={book.review.shareLine}
+              quotePage={book.review.quotePage}
+              quoteText={book.review.quoteText}
+              text={book.review.text}
+            />
+          )}
 
           <div className="flex justify-end mt-4">
             <Button
