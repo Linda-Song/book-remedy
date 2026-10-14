@@ -5,7 +5,7 @@ type Props = {
 
 export function WhyThisBook({ reason }: Props) {
   return (
-    <div className="rounded-2xl bg-bg-tint p-4 mb-4">
+    <div>
       <p className="text-sm font-extrabold text-green-dark mb-1">
         ♡ Why this book
       </p>

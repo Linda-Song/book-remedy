@@ -8,7 +8,7 @@ type Props = {
 
 export function WhatYouToldMe({ mood, genre, freeText }: Props) {
   return (
-    <div className="rounded-2xl bg-bg-tint p-4 mb-6">
+    <div>
       <div className="flex items-center justify-between mb-2">
         <p className="text-sm font-extrabold text-text-primary">
           What you told me
