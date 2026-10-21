@@ -46,11 +46,23 @@ export default function PrescriptionDetailPage() {
         {/* 오른쪽: 정보 */}
         <div className="flex flex-col flex-1 min-w-0">
           {/* 상태 배지 + 날짜 (이전의 Prescription 배지 자리) */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center mb-4">
             <span className="text-xs font-bold px-3 py-1 rounded-full bg-green text-white w-fit">
               {book.status}
             </span>
-            <span className="text-xs text-text-muted">{book.date}</span>
+            <span>
+              {book.startedDate && (
+                <p className="text-xs ml-2 px-3 py-1 rounded-full bg-green text-white  w-fit">
+                  Started {book.startedDate}
+                  {" — "}
+                  {book.finishedDate
+                    ? `Finished ${book.finishedDate}`
+                    : "Ongoing"}
+                </p>
+              )}
+            </span>
+
+            {/* <span className="text-xs text-text-muted">{book.date}</span> */}
           </div>
 
           <BookDetail
@@ -59,15 +71,6 @@ export default function PrescriptionDetailPage() {
             publisher={book.publisher}
             about={book.about}
           />
-
-          {/* 이전 date 자리 → Started/Finished */}
-          {book.startedDate && (
-            <p className="text-xs text-text-muted mb-4 -mt-2">
-              Started {book.startedDate}
-              {" — "}
-              {book.finishedDate ? `Finished ${book.finishedDate}` : "Ongoing"}
-            </p>
-          )}
 
           {/* What you told me + Why this book 한 블록 */}
           <div className="rounded-2xl bg-bg-tint p-4 mb-4 space-y-4">
