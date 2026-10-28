@@ -75,7 +75,7 @@ export default function Home() {
           <Button
             variant="primary"
             disabled={!selected}
-            onClick={() => router.push("/genre")}
+            onClick={() => router.push(`/genre?mood=${selected}`)}
             className="w-full h-[56px] mt-4"
           >
             Choose a genre

@@ -6,10 +6,43 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { getGuestId } from "@/lib/guestId";
+import { useSearchParams } from "next/navigation";
 
 export default function GenrePage() {
   const [selected, setSelected] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const mood = searchParams.get("mood");
+
+  // link to guestId
+  async function handleGetPrescription() {
+    const guestId = getGuestId();
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL}/prescribe`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          moodKey: mood,
+          genreKey: selected,
+          ownerKey: guestId,
+          isGuest: true,
+        }),
+      },
+    );
+
+    if (!res.ok) {
+      const error = await res.json();
+      console.error("Fail to prescription", error);
+      return;
+    }
+    const data = await res.json();
+    router.push(`/prescribing?id=${data.prescription.id}`);
+  }
 
   return (
     <div className=" flex flex-col justify-center text-center ">
@@ -41,7 +74,7 @@ export default function GenrePage() {
           <div className="flex items-center justify-center">
             <Button
               variant="primary"
-              onClick={() => router.push("/prescribing")}
+              onClick={handleGetPrescription}
               className="h-[40px] w-[320px] mb-3"
             >
               Get my prescription

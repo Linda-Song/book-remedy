@@ -47,41 +47,41 @@ insert into books (isbn13, title, author, publisher, cover_color, genres, about,
 -- ================================
 insert into book_moods (isbn13, mood_key, score) values
 -- The Midnight Library
-('9780000000001', 'need_comfort', 0.9),
-('9780000000001', 'deep_thoughts', 0.8),
+('9780000000001', 'comfort', 0.9),
+('9780000000001', 'think', 0.8),
 
 -- Salt & Marigold
-('9780000000002', 'want_calm', 0.9),
-('9780000000002', 'need_comfort', 0.6),
+('9780000000002', 'calm', 0.9),
+('9780000000002', 'comfort', 0.6),
 
 -- The Lantern Keeper
-('9780000000003', 'feel_excited', 0.9),
-('9780000000003', 'want_a_thrill', 0.7),
+('9780000000003', 'excited', 0.9),
+('9780000000003', 'thrill', 0.7),
 
 -- A Year of Small Mercies
-('9780000000004', 'need_comfort', 0.95),
-('9780000000004', 'deep_thoughts', 0.6),
+('9780000000004', 'comfort', 0.95),
+('9780000000004', 'think', 0.6),
 
 -- The Quiet Orchard
-('9780000000005', 'want_to_laugh', 0.9),
-('9780000000005', 'need_comfort', 0.5),
+('9780000000005', 'laugh', 0.9),
+('9780000000005', 'comfort', 0.5),
 
 -- Every Window Lit
-('9780000000006', 'deep_thoughts', 0.9),
-('9780000000006', 'want_calm', 0.5),
+('9780000000006', 'think', 0.9),
+('9780000000006', 'calm', 0.5),
 
 -- The Course of Tides
-('9780000000007', 'deep_thoughts', 0.8),
-('9780000000007', 'need_comfort', 0.7),
+('9780000000007', 'think', 0.8),
+('9780000000007', 'comfort', 0.7),
 
 -- Small Hours
-('9780000000008', 'deep_thoughts', 0.7),
-('9780000000008', 'want_calm', 0.6),
+('9780000000008', 'think', 0.7),
+('9780000000008', 'calm', 0.6),
 
 -- The Mapmaker's Daughter
-('9780000000009', 'feel_excited', 0.8),
-('9780000000009', 'want_a_thrill', 0.6),
+('9780000000009', 'excited', 0.8),
+('9780000000009', 'thrill', 0.6),
 
 -- Everything We Didn't Say
-('9780000000010', 'need_comfort', 0.8),
-('9780000000010', 'feel_romantic', 0.9);
+('9780000000010', 'comfort', 0.8),
+('9780000000010', 'romance', 0.9);

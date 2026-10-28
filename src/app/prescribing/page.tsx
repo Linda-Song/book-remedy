@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { Check } from "lucide-react";
 
@@ -13,6 +13,9 @@ const STEPS = [
 
 export default function Prescribing() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id");
+
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
@@ -20,13 +23,13 @@ export default function Prescribing() {
       setProgress((prev) => Math.min(prev + 2, 100));
     }, 50);
     const timer = setTimeout(() => {
-      router.push("/prescription");
+      router.push(`/prescription?id=${id}`);
     }, 2500);
     return () => {
       clearInterval(interval);
       clearTimeout(timer);
     };
-  }, [router]);
+  }, [router, id]);
 
   return (
     <div className="flex flex-col items-center justify-center gap-6">
