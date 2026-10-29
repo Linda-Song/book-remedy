@@ -1,23 +1,115 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useState } from "react";
 import { Calendar } from "@/components/ui/Calendar";
-import { useRouter } from "next/navigation";
-import {
-  PRESCRIPTION_DAYS,
-  PRESCRIPTION_HISTORY,
-} from "../data/prescription_history";
+import { useRouter } from "next/router";
+import { supabase } from "@/server/db/client";
+import { getGuestId } from "@/lib/guestId";
 
-const STATS = [
-  { label: "Prescriptions", value: 12 },
-  { label: "Books finished", value: 4 },
-  { label: "Days this month", value: PRESCRIPTION_DAYS.length },
-];
+type PrescriptionRecord = {
+  title: string;
+  author: string;
+  coverColor: string;
+  mood: string;
+  genre: string;
+  status: string;
+};
+
+type RawPrescription = {
+  created_at: string;
+  status: string;
+  mood_key: string;
+  genre_key: string | null;
+  books: {
+    title: string;
+    author: string;
+    cover_color: string;
+  };
+};
 
 export default function Me() {
   const router = useRouter();
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
-  const dayRecords = selectedDay ? PRESCRIPTION_HISTORY[selectedDay] : null;
+
+  const [prescriptionDays, setPrescriptionDays] = useState<number[]>([]);
+  const [historyByDay, setHistoryByDay] = useState<
+    Record<number, PrescriptionRecord[]>
+  >({});
+  const [totalCount, setTotalCount] = useState(0);
+  const [finishedCount, setFinishedCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchMonthData() {
+      const guestId = getGuestId();
+
+      const now = new Date();
+      const startOfMonth = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        1,
+      ).toISOString();
+      const startOfNextMonth = new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        1,
+      ).toISOString();
+
+      const { data, error } = await supabase
+        .from("prescriptions")
+        .select(
+          "created_at, status, mood_key, genre_key, books(title, author, cover_color)",
+        )
+        .eq("guest_id", guestId)
+        .gte("created_at", startOfMonth)
+        .lt("created_at", startOfNextMonth)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Failed to fetch calendar data", error);
+        setLoading(false);
+        return;
+      }
+      const rows = data as unknown as RawPrescription[];
+      const days: number[] = [];
+      const byDay: Record<number, PrescriptionRecord[]> = {};
+
+      rows.forEach((row) => {
+        const day = new Date(row.created_at).getDate();
+        if (!days.includes(day)) days.push(day);
+
+        if (!byDay[day]) byDay[day] = [];
+        byDay[day].push({
+          title: row.books.title,
+          author: row.books.author,
+          coverColor: row.books.cover_color,
+          mood: row.mood_key,
+          genre: row.genre_key ?? "",
+          status: row.status,
+        });
+      });
+
+      setPrescriptionDays(days);
+      setHistoryByDay(byDay);
+      setTotalCount(rows.length);
+      setFinishedCount(rows.filter((r) => r.status === "Finished").length);
+      setLoading(false);
+    }
+
+    fetchMonthData();
+  }, []);
+
+  const dayRecords = selectedDay ? historyByDay[selectedDay] : null;
+
+  const STATS = [
+    { label: "Prescriptions", value: totalCount },
+    { label: "Books finished", value: finishedCount },
+    { label: "Days this month", value: prescriptionDays.length },
+  ];
+
+  if (loading) {
+    return <p className="py-10 text-text-muted">Loading...</p>;
+  }
 
   return (
     <div className="py-10">
@@ -39,7 +131,7 @@ export default function Me() {
       <div className="flex gap-6 mt-8">
         <div className="w-[380px] flex-shrink-0">
           <Calendar
-            prescriptionDays={PRESCRIPTION_DAYS}
+            prescriptionDays={prescriptionDays}
             selectedDay={selectedDay}
             onSelectDay={setSelectedDay}
           />
