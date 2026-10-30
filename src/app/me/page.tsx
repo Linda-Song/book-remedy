@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, useState } from "react";
+import { useEffect, useState } from "react";
 import { Calendar } from "@/components/ui/Calendar";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/server/db/client";
 import { getGuestId } from "@/lib/guestId";
+import { useAuthStore } from "@/features/auth/authStore";
 
 type PrescriptionRecord = {
   title: string;
@@ -39,10 +40,13 @@ export default function Me() {
   const [finishedCount, setFinishedCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchMonthData() {
-      const guestId = getGuestId();
+  const user = useAuthStore((s) => s.user);
+  const authLoading = useAuthStore((s) => s.authLoading);
 
+  useEffect(() => {
+    if (authLoading) return;
+
+    async function fetchMonthData() {
       const now = new Date();
       const startOfMonth = new Date(
         now.getFullYear(),
@@ -55,22 +59,27 @@ export default function Me() {
         1,
       ).toISOString();
 
-      const { data, error } = await supabase
+      const query = supabase
         .from("prescriptions")
         .select(
           "created_at, status, mood_key, genre_key, books(title, author, cover_color)",
         )
-        .eq("guest_id", guestId)
         .gte("created_at", startOfMonth)
         .lt("created_at", startOfNextMonth)
         .order("created_at", { ascending: false });
 
+      const { data, error } = user
+        ? await query.eq("user_id", user.id)
+        : await query.eq("guest_id", getGuestId());
+
       if (error) {
-        console.error("Failed to fetch calendar data", error);
+        console.error("Failed to fetch calendar data:", error);
         setLoading(false);
         return;
       }
+
       const rows = data as unknown as RawPrescription[];
+
       const days: number[] = [];
       const byDay: Record<number, PrescriptionRecord[]> = {};
 
@@ -93,11 +102,16 @@ export default function Me() {
       setHistoryByDay(byDay);
       setTotalCount(rows.length);
       setFinishedCount(rows.filter((r) => r.status === "Finished").length);
+
+      if (rows.length > 0) {
+        setSelectedDay(new Date(rows[0].created_at).getDate());
+      }
+
       setLoading(false);
     }
 
     fetchMonthData();
-  }, []);
+  }, [user, authLoading]);
 
   const dayRecords = selectedDay ? historyByDay[selectedDay] : null;
 
@@ -157,7 +171,9 @@ export default function Me() {
           <div className="rounded-2xl border border-border-light bg-white p-5">
             <div className="flex items-center justify-between mb-3">
               <p className="text-base font-bold text-text-primary">
-                {selectedDay ? `Sep ${selectedDay}` : "Select a date"}
+                {selectedDay
+                  ? `${new Date().toLocaleString("en-US", { month: "short" })} ${selectedDay}`
+                  : "Select a date"}
               </p>
               <button
                 onClick={() => router.push("/history")}

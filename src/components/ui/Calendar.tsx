@@ -3,6 +3,20 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
 
 type Props = {
   prescriptionDays: number[];
@@ -16,19 +30,19 @@ export function Calendar({
   selectedDay,
 }: Props) {
   const today = new Date();
-  const year = 2026;
-  const month = 8;
+  const year = today.getFullYear();
+  const month = today.getMonth();
 
-  const firstDayOfMonth = new Date(year, month, 1).getDay(); //2
-  const daysInMonth = new Date(year, month + 1, 0).getDate(); //30
-  const daysInPrevMonth = new Date(year, month, 0).getDate(); //31
+  const firstDayOfMonth = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const daysInPrevMonth = new Date(year, month, 0).getDate();
 
   const leadingDays = Array.from(
     { length: firstDayOfMonth },
     (_, i) => daysInPrevMonth - firstDayOfMonth + i + 1,
-  ); //30,31
+  );
 
-  const currentDays = Array.from({ length: daysInMonth }, (_, i) => i + 1); //1,2,3,4,5...31
+  const currentDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
   const totalCells = leadingDays.length + currentDays.length;
   const trailingCount = (7 - (totalCells % 7)) % 7;
@@ -37,12 +51,14 @@ export function Calendar({
   return (
     <div className="bg-white rounded-2xl border border-border-light p-6">
       <div className="flex items-center justify-between mb-4">
-        <p className="text-lg font-bold text-text-primary"> September 2026</p>
+        <p className="text-lg font-bold text-text-primary">
+          {MONTH_NAMES[month]} {year}
+        </p>
         <div className="flex gap-1">
-          <button className="w-8 h-8 flex items-center justify-center rounded-md border border-border-light hover:bg-bg-tint ">
+          <button className="w-8 h-8 flex items-center justify-center rounded-md border border-border-light hover:bg-bg-tint">
             <ChevronLeft size={18} />
           </button>
-          <button className="w-8 h-8 flex items-center justify-center rounded-md border border-border-light hover:bg-bg-tint ">
+          <button className="w-8 h-8 flex items-center justify-center rounded-md border border-border-light hover:bg-bg-tint">
             <ChevronRight size={18} />
           </button>
         </div>
@@ -58,6 +74,7 @@ export function Calendar({
           </div>
         ))}
       </div>
+
       <div className="grid grid-cols-7 gap-2">
         {leadingDays.map((day) => (
           <div
@@ -67,6 +84,7 @@ export function Calendar({
             {day}
           </div>
         ))}
+
         {currentDays.map((day) => {
           const hasPrescription = prescriptionDays.includes(day);
           const isToday = day === today.getDate();
@@ -88,6 +106,7 @@ export function Calendar({
             </div>
           );
         })}
+
         {trailingDays.map((day) => (
           <div
             key={`next-${day}`}
@@ -97,6 +116,7 @@ export function Calendar({
           </div>
         ))}
       </div>
+
       <div className="flex gap-4 mt-4 text-xs text-text-muted">
         <div className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded-full bg-green-light" /> Prescription

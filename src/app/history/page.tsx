@@ -4,6 +4,7 @@ import { Grid2x2, List, ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/server/db/client";
 import { getGuestId } from "@/lib/guestId";
+import { useAuthStore } from "@/features/auth/authStore";
 
 const FILTERS = [
   "All",
@@ -36,17 +37,23 @@ export default function HistoryPage() {
   const [allPrescriptions, setAllPrescriptions] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchHistory() {
-      const guestId = getGuestId();
+  const user = useAuthStore((s) => s.user);
+  const authLoading = useAuthStore((s) => s.authLoading);
 
-      const { data, error } = await supabase
+  useEffect(() => {
+    if (authLoading) return;
+
+    async function fetchHistory() {
+      const query = supabase
         .from("prescriptions")
         .select(
           "id, status, created_at, books(title, author, cover_color), reviews(rating)",
         )
-        .eq("guest_id", guestId)
         .order("created_at", { ascending: false });
+
+      const { data, error } = user
+        ? await query.eq("user_id", user.id)
+        : await query.eq("guest_id", getGuestId());
 
       if (error) {
         console.error("Failed to fetch history:", error);
@@ -57,7 +64,7 @@ export default function HistoryPage() {
     }
 
     fetchHistory();
-  }, []);
+  }, [user, authLoading]);
 
   const filtered = allPrescriptions.filter((book) =>
     activeFilter === "All" ? true : book.status === activeFilter,

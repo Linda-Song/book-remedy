@@ -1,12 +1,15 @@
 "use client";
+
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/modal/Modal";
 import { AuthPrompt } from "@/components/modal/AuthPrompt";
+import { FeedbackPrompt } from "@/components/modal/FeedbackPrompt";
 import { BookDetail } from "@/components/prescription/BookDetail";
 import { WhyThisBook } from "@/components/prescription/WhyThisBook";
 import { supabase } from "@/server/db/client";
+import { useAuthStore } from "@/features/auth/authStore";
 
 type PrescriptionData = {
   mood_key: string;
@@ -23,6 +26,8 @@ type PrescriptionData = {
 };
 
 export default function PrescriptionPage() {
+  const router = useRouter();
+  const user = useAuthStore((s) => s.user);
   const searchParams = useSearchParams();
   const id = searchParams.get("id");
 
@@ -41,7 +46,7 @@ export default function PrescriptionPage() {
         .single();
 
       if (error) {
-        console.log("Fail to fetch prescription: ", error);
+        console.error("Failed to fetch prescription:", error);
       } else {
         setData(result as unknown as PrescriptionData);
       }
@@ -50,13 +55,27 @@ export default function PrescriptionPage() {
     fetchPrescription();
   }, [id]);
 
+  // 회원이 답하면 DB에 저장
+  async function saveFeedback(value: "yes" | "no") {
+    const { error } = await supabase
+      .from("prescriptions")
+      .update({ feedback: value })
+      .eq("id", id);
+    if (error) console.error("Failed to save feedback:", error);
+  }
+
+  function handleAnswer(value: "yes" | "no") {
+    setModalType(value);
+    if (user) saveFeedback(value);
+  }
+
   if (loading) {
     return (
       <p className="py-10 text-text-muted">Loading your prescription...</p>
     );
   }
   if (!data) {
-    return <p className="py-10 text-text-muted"> Prescription not found.</p>;
+    return <p className="py-10 text-text-muted">Prescription not found.</p>;
   }
 
   return (
@@ -72,7 +91,7 @@ export default function PrescriptionPage() {
         <div className="flex p-10 gap-16">
           <div className="flex flex-col items-center flex-shrink-0">
             <div
-              className="w-[200px] h-[313px] rounded-md bg-[#16332E] mb-6"
+              className="w-[200px] h-[313px] rounded-md mb-6"
               style={{ backgroundColor: data.books.cover_color }}
             />
             <Button variant="outline" className="rounded-sm h-8 w-[180px]">
@@ -126,14 +145,14 @@ export default function PrescriptionPage() {
           <Button
             variant="primary"
             className="h-10 px-10 rounded-xl"
-            onClick={() => setModalType("yes")}
+            onClick={() => handleAnswer("yes")}
           >
             Yes
           </Button>
           <Button
             variant="outline"
             className="h-10 px-10 rounded-xl"
-            onClick={() => setModalType("no")}
+            onClick={() => handleAnswer("no")}
           >
             No
           </Button>
@@ -143,9 +162,17 @@ export default function PrescriptionPage() {
       <p className="text-center text-xs text-text-muted py-6">
         Book suggestions only, not medical advice.
       </p>
-      <Modal open={modalType !== null}>
-        {modalType && (
+
+      <Modal open={modalType !== null} onClose={() => setModalType(null)}>
+        {modalType && !user && (
           <AuthPrompt type={modalType} onDismiss={() => setModalType(null)} />
+        )}
+        {modalType && user && (
+          <FeedbackPrompt
+            type={modalType}
+            onClose={() => setModalType(null)}
+            onPrimary={() => router.push(modalType === "yes" ? "/me" : "/")}
+          />
         )}
       </Modal>
     </div>

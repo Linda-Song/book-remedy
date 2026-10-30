@@ -5,9 +5,10 @@ import { GENRES } from "../data/genre";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { getGuestId } from "@/lib/guestId";
-import { useSearchParams } from "next/navigation";
+import { supabase } from "@/server/db/client";
+import { useAuthStore } from "@/features/auth/authStore";
 
 export default function GenrePage() {
   const [selected, setSelected] = useState<string | null>(null);
@@ -15,29 +16,37 @@ export default function GenrePage() {
   const searchParams = useSearchParams();
   const mood = searchParams.get("mood");
 
-  // link to guestId
+  const user = useAuthStore((s) => s.user);
+  const authLoading = useAuthStore((s) => s.authLoading);
+
   async function handleGetPrescription() {
-    const guestId = getGuestId();
+    // 로그인했으면 로그인 토큰, 아니면 기본 키 사용
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token =
+      sessionData.session?.access_token ??
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL}/prescribe`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+          apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           moodKey: mood,
           genreKey: selected,
-          ownerKey: guestId,
-          isGuest: true,
+          ownerKey: user ? user.id : getGuestId(),
+          isGuest: !user,
         }),
       },
     );
 
     if (!res.ok) {
       const error = await res.json();
-      console.error("Fail to prescription", error);
+      console.error("Failed to get prescription:", error);
       return;
     }
     const data = await res.json();
@@ -45,7 +54,7 @@ export default function GenrePage() {
   }
 
   return (
-    <div className=" flex flex-col justify-center text-center ">
+    <div className="flex flex-col justify-center text-center">
       <div className="mb-20">
         <div className="mb-10">
           <p className="text-4xl text-text-primary font-bold mb-2">
@@ -55,7 +64,7 @@ export default function GenrePage() {
             Pick a genre, or let me surprise you.
           </span>
         </div>
-        <div className="flex flex-col items-center justify-center ">
+        <div className="flex flex-col items-center justify-center">
           <div className="grid grid-cols-4 gap-3 mb-3 w-[600px] mx-auto">
             {GENRES.map((genre) => (
               <GenreButton
@@ -67,7 +76,7 @@ export default function GenrePage() {
             ))}
           </div>
 
-          <Button variant="genre" className="h-[40px] mb-4 w-[600px] mb-10">
+          <Button variant="genre" className="h-[40px] w-[600px] mb-10">
             Surprise me
           </Button>
 
@@ -75,6 +84,7 @@ export default function GenrePage() {
             <Button
               variant="primary"
               onClick={handleGetPrescription}
+              disabled={authLoading}
               className="h-[40px] w-[320px] mb-3"
             >
               Get my prescription
@@ -96,7 +106,7 @@ export default function GenrePage() {
           alt="caterpillar"
           width={400}
           height={120}
-        ></Image>
+        />
       </div>
     </div>
   );
