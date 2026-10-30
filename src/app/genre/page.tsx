@@ -15,6 +15,7 @@ export default function GenrePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const mood = searchParams.get("mood");
+  const text = searchParams.get("text");
 
   const user = useAuthStore((s) => s.user);
   const authLoading = useAuthStore((s) => s.authLoading);
@@ -37,6 +38,7 @@ export default function GenrePage() {
         },
         body: JSON.stringify({
           moodKey: mood,
+          freeText: text,
           genreKey: selected,
           ownerKey: user ? user.id : getGuestId(),
           isGuest: !user,
@@ -76,7 +78,12 @@ export default function GenrePage() {
             ))}
           </div>
 
-          <Button variant="genre" className="h-[40px] w-[600px] mb-10">
+          <Button
+            variant="genre"
+            selected={selected === null}
+            onClick={() => setSelected(null)}
+            className="h-[40px] w-[600px] mb-10"
+          >
             Surprise me
           </Button>
 

@@ -8,6 +8,7 @@ import { getGuestId } from "@/lib/guestId";
 import { useAuthStore } from "@/features/auth/authStore";
 
 type PrescriptionRecord = {
+  id: string;
   title: string;
   author: string;
   coverColor: string;
@@ -17,6 +18,7 @@ type PrescriptionRecord = {
 };
 
 type RawPrescription = {
+  id: string;
   created_at: string;
   status: string;
   mood_key: string;
@@ -44,6 +46,7 @@ export default function Me() {
   const authLoading = useAuthStore((s) => s.authLoading);
 
   useEffect(() => {
+    // Wait until the login check finishes
     if (authLoading) return;
 
     async function fetchMonthData() {
@@ -62,12 +65,13 @@ export default function Me() {
       const query = supabase
         .from("prescriptions")
         .select(
-          "created_at, status, mood_key, genre_key, books(title, author, cover_color)",
+          "id, created_at, status, mood_key, genre_key, books(title, author, cover_color)",
         )
         .gte("created_at", startOfMonth)
         .lt("created_at", startOfNextMonth)
         .order("created_at", { ascending: false });
 
+      // Members are matched by user_id, guests by guest_id
       const { data, error } = user
         ? await query.eq("user_id", user.id)
         : await query.eq("guest_id", getGuestId());
@@ -83,12 +87,14 @@ export default function Me() {
       const days: number[] = [];
       const byDay: Record<number, PrescriptionRecord[]> = {};
 
+      // Group the flat list by day of the month
       rows.forEach((row) => {
         const day = new Date(row.created_at).getDate();
         if (!days.includes(day)) days.push(day);
 
         if (!byDay[day]) byDay[day] = [];
         byDay[day].push({
+          id: row.id,
           title: row.books.title,
           author: row.books.author,
           coverColor: row.books.cover_color,
@@ -103,6 +109,7 @@ export default function Me() {
       setTotalCount(rows.length);
       setFinishedCount(rows.filter((r) => r.status === "Finished").length);
 
+      // Select the day of the most recent prescription by default
       if (rows.length > 0) {
         setSelectedDay(new Date(rows[0].created_at).getDate());
       }
@@ -150,6 +157,7 @@ export default function Me() {
             onSelectDay={setSelectedDay}
           />
         </div>
+
         {/* right */}
         <div className="flex flex-col gap-4 flex-1 min-w-0">
           {/* stats */}
@@ -184,13 +192,14 @@ export default function Me() {
             </div>
 
             {dayRecords ? (
-              dayRecords.map((book, i) => (
+              dayRecords.map((book) => (
                 <div
-                  key={i}
-                  className="flex items-center justify-between py-3 border-t border-border-light first:border-t-0"
+                  key={book.id}
+                  onClick={() => router.push(`/me/prescriptions/${book.id}`)}
+                  className="flex items-center justify-between py-3 border-t border-border-light first:border-t-0 cursor-pointer"
                 >
                   <div
-                    className="w-[44px] h-[64px] rounded-md flex-shrink-0 mr-4 "
+                    className="w-[44px] h-[64px] rounded-md flex-shrink-0 mr-4"
                     style={{ backgroundColor: book.coverColor }}
                   />
 
@@ -205,9 +214,11 @@ export default function Me() {
                       <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-bg-tint text-green-dark">
                         {book.mood}
                       </span>
-                      <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-green-light text-text-primary">
-                        {book.genre}
-                      </span>
+                      {book.genre && (
+                        <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-green-light text-text-primary">
+                          {book.genre}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-bg-tint text-text-secondary">

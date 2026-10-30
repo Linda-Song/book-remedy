@@ -6,13 +6,16 @@ import { Modal } from "@/components/modal/Modal";
 import { AuthPrompt } from "@/components/modal/AuthPrompt";
 import { supabase } from "@/server/db/client";
 import { useAuthStore } from "@/features/auth/authStore";
+import { useRouter } from "next/navigation";
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const user = useAuthStore((s) => s.user);
+  const router = useRouter();
 
   async function handleSignOut() {
     await supabase.auth.signOut();
+    router.push("/");
   }
 
   return (

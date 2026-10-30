@@ -2,7 +2,9 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 
 Deno.serve(async (req) => {
   try {
-    const { moodKey, genreKey, ownerKey } = await req.json();
+    const { moodKey: rawMood, genreKey, ownerKey, freeText } = await req.json();
+    // Temporary: free text has no mood yet, so fall back until AI interprets it
+    const moodKey = rawMood ?? "comfort";
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -61,6 +63,7 @@ Deno.serve(async (req) => {
         user_id: userId,
         guest_id: isGuest ? ownerKey : null,
         mood_key: moodKey,
+        free_text: freeText ?? null,
         genre_key: genreKey ?? null,
         isbn13: picked.isbn13,
         reason: "You wanted something for this mood, and this book fits well.",

@@ -29,14 +29,30 @@ type PrescriptionDetail = {
     cover_color: string;
     about: string;
   };
-  reviews: {
-    rating: number;
-    share_line: string;
-    quote_page: number | null;
-    quote_text: string | null;
-    body: string;
-  } | null;
+  reviews:
+    | {
+        rating: number;
+        share_line: string;
+        quote_page: number | null;
+        quote_text: string | null;
+        body: string;
+      }[]
+    | {
+        rating: number;
+        share_line: string;
+        quote_page: number | null;
+        quote_text: string | null;
+        body: string;
+      }
+    | null;
 };
+
+function formatDateRange(started: string | null, finished: string | null) {
+  if (started && finished) return `Started ${started} — Finished ${finished}`;
+  if (started) return `Started ${started} — Ongoing`;
+  if (finished) return `Finished ${finished}`;
+  return null;
+}
 
 export default function PrescriptionDetailPage() {
   const router = useRouter();
@@ -56,8 +72,6 @@ export default function PrescriptionDetailPage() {
         .eq("id", id)
         .single();
 
-      console.log("Prescription query result:", { data, error });
-
       if (error) {
         console.error("Failed to fetch prescription detail:", error);
       } else {
@@ -76,6 +90,7 @@ export default function PrescriptionDetailPage() {
   }
 
   const review = Array.isArray(book.reviews) ? book.reviews[0] : book.reviews;
+  const dateText = formatDateRange(book.started_date, book.finished_date);
 
   return (
     <div className="py-10">
@@ -101,19 +116,15 @@ export default function PrescriptionDetailPage() {
 
         {/* Right: info */}
         <div className="flex flex-col flex-1 min-w-0">
-          {/* Status badge + started/finished date (replaces old "Prescription" badge) */}
+          {/* Status badge + date range */}
           <div className="flex items-center mb-4">
             <span className="text-xs font-bold px-3 py-1 rounded-full bg-green text-white w-fit">
               {book.status}
             </span>
 
-            {book.started_date && (
-              <p className="text-xs ml-2 px-3 py-1 rounded-full bg-green text-white  w-fit">
-                Started {book.started_date}
-                {" — "}
-                {book.finished_date
-                  ? `Finished ${book.finished_date}`
-                  : "Ongoing"}
+            {dateText && (
+              <p className="text-xs ml-2 px-3 py-1 rounded-full bg-green text-white w-fit">
+                {dateText}
               </p>
             )}
           </div>

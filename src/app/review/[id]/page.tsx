@@ -10,6 +10,15 @@ import { supabase } from "@/server/db/client";
 
 const STATUSES = ["To read", "Reading", "Finished", "Not for me"] as const;
 
+type ReviewRow = {
+  rating: number;
+  share_line: string;
+  quote_page: number | null;
+  quote_text: string | null;
+  body: string;
+  is_public: boolean;
+};
+
 type PrescriptionWithReview = {
   id: string;
   status: string;
@@ -20,12 +29,7 @@ type PrescriptionWithReview = {
     author: string;
     cover_color: string;
   };
-  reviews: {
-    rating: number;
-    share_line: string;
-    body: string;
-    is_public: boolean;
-  } | null;
+  reviews: ReviewRow[] | ReviewRow | null;
 };
 
 export default function ReviewPage() {
@@ -42,6 +46,8 @@ export default function ReviewPage() {
   const [finished, setFinished] = useState("");
   const [rating, setRating] = useState(0);
   const [shareLine, setShareLine] = useState("");
+  const [quotePage, setQuotePage] = useState("");
+  const [quoteText, setQuoteText] = useState("");
   const [reviewText, setReviewText] = useState("");
   const [isPublic, setIsPublic] = useState(false);
 
@@ -68,14 +74,17 @@ export default function ReviewPage() {
         ? typed.reviews[0]
         : typed.reviews;
 
+      // Prefill the form with existing values (empty if no review yet)
       setBook(typed);
       setStatus(typed.status as (typeof STATUSES)[number]);
       setStarted(typed.started_date ?? "");
       setFinished(typed.finished_date ?? "");
       if (review) {
         setRating(review.rating);
-        setShareLine(review.share_line);
-        setReviewText(review.body);
+        setShareLine(review.share_line ?? "");
+        setQuotePage(review.quote_page ? String(review.quote_page) : "");
+        setQuoteText(review.quote_text ?? "");
+        setReviewText(review.body ?? "");
         setIsPublic(review.is_public);
       }
       setLoading(false);
@@ -84,18 +93,33 @@ export default function ReviewPage() {
     fetchData();
   }, [id]);
 
+  // Block a start date that is later than the finish date
+  function handleStartedChange(value: string) {
+    if (finished && value > finished) return;
+    setStarted(value);
+  }
+  // Block a finish date that is earlier than the start date
+  function handleFinishedChange(value: string) {
+    if (started && value < started) return;
+    setFinished(value);
+  }
+
   async function handleSave() {
+    // Final safety check in case a date was typed in manually
+    if (started && finished && finished < started) return;
+
     setSaving(true);
 
-    // 1) prescriptions 테이블의 status, 날짜 업데이트
-    const { error: prescriptionError } = await supabase
+    // 1) Update status and dates on the prescription
+    const { data: updated, error: prescriptionError } = await supabase
       .from("prescriptions")
       .update({
         status,
         started_date: started || null,
         finished_date: finished || null,
       })
-      .eq("id", id);
+      .eq("id", id)
+      .select();
 
     if (prescriptionError) {
       console.error("Failed to update prescription:", prescriptionError);
@@ -103,11 +127,21 @@ export default function ReviewPage() {
       return;
     }
 
-    // 2) reviews 테이블에 upsert (있으면 수정, 없으면 새로 생성)
+    // RLS blocks silently: zero rows updated and no error, so catch it here
+    if (!updated || updated.length === 0) {
+      console.error("Prescription update was blocked (0 rows updated)");
+      alert("Couldn't save your changes. Please try again.");
+      setSaving(false);
+      return;
+    }
+
+    // 2) Upsert the review (update if it exists, insert otherwise)
     const { error: reviewError } = await supabase.from("reviews").upsert({
       prescription_id: id,
       rating,
       share_line: shareLine,
+      quote_page: quotePage ? Number(quotePage) : null,
+      quote_text: quoteText || null,
       body: reviewText,
       is_public: isPublic,
     });
@@ -182,7 +216,8 @@ export default function ReviewPage() {
               <input
                 type="date"
                 value={started}
-                onChange={(e) => setStarted(e.target.value)}
+                max={finished || undefined}
+                onChange={(e) => handleStartedChange(e.target.value)}
                 className="w-full h-10 rounded-xl border border-border-light px-3 text-sm"
               />
             </div>
@@ -194,13 +229,7 @@ export default function ReviewPage() {
                 type="date"
                 value={finished}
                 min={started || undefined}
-                onChange={(e) => {
-                  if (started && e.target.value < started) {
-                    alert("Finished date can't be before the started date.");
-                    return;
-                  }
-                  setFinished(e.target.value);
-                }}
+                onChange={(e) => handleFinishedChange(e.target.value)}
                 className="w-full h-10 rounded-xl border border-border-light px-3 text-sm"
               />
             </div>
@@ -230,6 +259,29 @@ export default function ReviewPage() {
             <p className="text-xs text-text-muted mt-2">
               This short line goes on your Instagram image. Keep it sweet.
             </p>
+          </div>
+
+          <div className="mb-6">
+            <p className="text-sm font-bold text-text-primary mb-2">
+              Favorite quote{" "}
+              <span className="font-normal text-text-muted">(optional)</span>
+            </p>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                min={1}
+                placeholder="Page"
+                value={quotePage}
+                onChange={(e) => setQuotePage(e.target.value)}
+                className="w-20 h-10 rounded-xl border border-border-light px-3 text-sm"
+              />
+              <input
+                placeholder="A line from the book"
+                value={quoteText}
+                onChange={(e) => setQuoteText(e.target.value)}
+                className="flex-1 h-10 rounded-xl border border-border-light px-3 text-sm"
+              />
+            </div>
           </div>
 
           <div className="mb-6">
@@ -287,7 +339,7 @@ export default function ReviewPage() {
           </div>
         </div>
 
-        {/* Right: preview */}
+        {/* Right: live share-card preview */}
         <div className="flex-shrink-0">
           <p className="text-xs text-text-muted text-center mb-2">Preview</p>
           <div className="w-[220px] rounded-2xl bg-green-light p-5">
@@ -301,11 +353,14 @@ export default function ReviewPage() {
             <div className="flex justify-center mb-2">
               <StarRating rating={rating} size={14} />
             </div>
-            <p className="text-sm font-bold text-text-primary text-center mb-1">
+            <p className="text-sm font-bold text-text-primary text-center mb-1 break-words">
               &quot;{shareLine || "..."}&quot;
             </p>
-            <p className="text-xs text-text-muted text-center">
-              {book.books.title} · {book.books.author}
+            <p className="text-xs text-text-muted text-center truncate">
+              {book.books.title}
+            </p>
+            <p className="text-xs text-text-muted text-center truncate">
+              {book.books.author}
             </p>
           </div>
           <p className="text-xs text-text-muted text-center mt-2">
