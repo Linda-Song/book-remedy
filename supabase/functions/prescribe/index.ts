@@ -1,17 +1,99 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
+// Known mood keys, used to interpret free text
+const MOOD_KEYS = [
+  "comfort",
+  "excited",
+  "thrill",
+  "calm",
+  "think",
+  "laugh",
+  "escape",
+  "nostalgia",
+  "boost",
+  "romance",
+  "learn",
+  "courage",
+];
+
+const MODEL = "claude-haiku-4-5"; // check the current model name in the Anthropic docs
+
+type Pick = { isbn13: string; reason: string; dosage: string };
+
+// Ask Claude to choose one candidate and write the reason and dosage
+async function askClaude(
+  moodText: string,
+  genreKey: string | null,
+  candidates: {
+    isbn13: string;
+    title: string;
+    author: string;
+    about: string;
+  }[],
+): Promise<Pick | null> {
+  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+
+  if (!apiKey) return null;
+
+  const prompt = `You are a warm, careful book recommender.
+The reader feels: "${moodText}"
+Preferred genre: ${genreKey ?? "any"}
+
+Choose exactly ONE book from this list (use its isbn13 exactly):
+${candidates
+  .map((c) => `- ${c.isbn13} | ${c.title} by ${c.author} | ${c.about}`)
+  .join("\n")}
+
+Reply with JSON only, no other text:
+{"isbn13": "...", "reason": "1-2 warm sentences on why this fits the reader", "dosage": "a short reading suggestion, e.g. 20 pages each evening"}`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: 300,
+        messages: [{ role: "user", content: prompt }],
+      }),
+    });
+
+    if (!res.ok) {
+      console.error("Claude API error:", res.status, await res.text());
+      return null;
+    }
+
+    const json = await res.json();
+    const text: string = json.content?.[0]?.text ?? "";
+    const parsed = JSON.parse(
+      text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1),
+    );
+
+    // Validate: the pick must be one of the candidates we offered
+    if (!candidates.some((c) => c.isbn13 === parsed.isbn13)) return null;
+    if (typeof parsed.reason !== "string" || typeof parsed.dosage !== "string")
+      return null;
+    return parsed as Pick;
+  } catch (err) {
+    console.error("Claude call failed:", err);
+    return null;
+  }
+}
+
 Deno.serve(async (req) => {
   try {
     const { moodKey: rawMood, genreKey, ownerKey, freeText } = await req.json();
-    // Temporary: free text has no mood yet, so fall back until AI interprets it
-    const moodKey = rawMood ?? "comfort";
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // checking token
+    // Verify the user from the token
     const token = req.headers.get("Authorization")?.replace("Bearer ", "");
     const { data: userData } = token
       ? await supabase.auth.getUser(token)
@@ -19,9 +101,8 @@ Deno.serve(async (req) => {
 
     const userId = userData.user?.id ?? null;
     const isGuest = !userId;
-    const owner = userId ?? ownerKey; // 회원이면 서버가 확인한 id
+    const owner = userId ?? ownerKey;
 
-    // ownerKey
     if (!owner) {
       return new Response(JSON.stringify({ error: "missing owner" }), {
         status: 400,
@@ -44,6 +125,9 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Free text without a mood: use a default until Claude picks among candidates
+    const moodKey = MOOD_KEYS.includes(rawMood) ? rawMood : "comfort";
+
     const { data: candidates, error: candidateError } = await supabase
       .from("book_moods")
       .select("isbn13, score, books(*)")
@@ -56,7 +140,29 @@ Deno.serve(async (req) => {
       });
     }
 
-    const picked = candidates[0];
+    // Describe the reader's mood for the prompt
+    const moodText = freeText?.trim() || `I'm in the mood for: ${moodKey}`;
+
+    const ai = await askClaude(
+      moodText,
+      genreKey ?? null,
+      candidates.map((c: any) => ({
+        isbn13: c.isbn13,
+        title: c.books.title,
+        author: c.books.author,
+        about: c.books.about,
+      })),
+    );
+
+    // Fallback: top-scored candidate if the AI failed or returned something invalid
+    const picked = ai
+      ? candidates.find((c: any) => c.isbn13 === ai.isbn13)!
+      : candidates[0];
+    const reason =
+      ai?.reason ??
+      "You wanted something for this mood, and this book fits well.";
+    const dosage = ai?.dosage ?? "20 pages in the evening, for one week.";
+
     const { data: prescription, error: insertError } = await supabase
       .from("prescriptions")
       .insert({
@@ -66,8 +172,8 @@ Deno.serve(async (req) => {
         free_text: freeText ?? null,
         genre_key: genreKey ?? null,
         isbn13: picked.isbn13,
-        reason: "You wanted something for this mood, and this book fits well.",
-        dosage: "20 pages in the evening, for one week.",
+        reason,
+        dosage,
       })
       .select()
       .single();
