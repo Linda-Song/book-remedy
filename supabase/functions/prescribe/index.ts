@@ -16,7 +16,36 @@ const MOOD_KEYS = [
   "courage",
 ];
 
-const MODEL = "claude-haiku-4-5"; // check the current model name in the Anthropic docs
+const MODEL = "claude-haiku-5-5"; // check the current model name in the Anthropic docs
+const GENRE_KEYS = [
+  "fiction",
+  "mystery",
+  "thriller",
+  "romance",
+  "fantasy",
+  "scifi",
+  "historical",
+  "humor",
+  "classics",
+  "kids",
+  "teen",
+  "biography",
+  "self-growth",
+  "psychology",
+  "philosophy",
+  "science",
+  "nature",
+  "history",
+  "poetry",
+  "travel",
+];
+
+// Which maturity levels each genre may show
+function allowedMaturity(genre: string | null): string[] {
+  if (genre === "kids") return ["all_ages"];
+  if (genre === "teen") return ["all_ages", "teen"];
+  return ["all_ages", "teen", "adult"];
+}
 
 type Pick = { isbn13: string; reason: string; dosage: string };
 
@@ -57,7 +86,7 @@ Reply with JSON only, no other text:
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 300,
+        max_tokens: 1000,
         messages: [{ role: "user", content: prompt }],
       }),
     });
@@ -68,7 +97,14 @@ Reply with JSON only, no other text:
     }
 
     const json = await res.json();
-    const text: string = json.content?.[0]?.text ?? "";
+    // The first block may not be text, so look for the text block
+    const text: string =
+      json.content?.find((c: { type: string }) => c.type === "text")?.text ??
+      "";
+    if (!text.includes("{")) {
+      console.error("No JSON in response:", JSON.stringify(json).slice(0, 400));
+      return null;
+    }
     const parsed = JSON.parse(
       text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1),
     );
@@ -128,12 +164,27 @@ Deno.serve(async (req) => {
     // Free text without a mood: use a default until Claude picks among candidates
     const moodKey = MOOD_KEYS.includes(rawMood) ? rawMood : "comfort";
 
-    const { data: candidates, error: candidateError } = await supabase
+    // Only accept a known genre; anything else means "any genre"
+    const genre = GENRE_KEYS.includes(genreKey) ? genreKey : null;
+
+    let query = supabase
       .from("book_moods")
-      .select("isbn13, score, books(*)")
+      .select("isbn13, score, books!inner(*)")
       .eq("mood_key", moodKey)
+      .in("books.maturity", allowedMaturity(genre));
+
+    if (genre) {
+      // Only books tagged with the chosen genre
+      query = query.contains("books.genres", [genre]);
+    } else {
+      // No genre chosen: keep children's books out of general picks
+      query = query.not("books.genres", "cs", "{kids}");
+    }
+
+    const { data: candidates, error: candidateError } = await query
       .order("score", { ascending: false })
       .limit(10);
+
     if (candidateError || !candidates || candidates.length === 0) {
       return new Response(JSON.stringify({ error: "no candidates found" }), {
         status: 404,
@@ -145,7 +196,7 @@ Deno.serve(async (req) => {
 
     const ai = await askClaude(
       moodText,
-      genreKey ?? null,
+      genre,
       candidates.map((c: any) => ({
         isbn13: c.isbn13,
         title: c.books.title,
@@ -170,7 +221,7 @@ Deno.serve(async (req) => {
         guest_id: isGuest ? ownerKey : null,
         mood_key: moodKey,
         free_text: freeText ?? null,
-        genre_key: genreKey ?? null,
+        genre_key: genre,
         isbn13: picked.isbn13,
         reason,
         dosage,
