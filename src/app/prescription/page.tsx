@@ -10,6 +10,7 @@ import { BookDetail } from "@/components/prescription/BookDetail";
 import { WhyThisBook } from "@/components/prescription/WhyThisBook";
 import { supabase } from "@/server/db/client";
 import { useAuthStore } from "@/features/auth/authStore";
+import { BookCover } from "@/components/books/BookCover";
 
 type PrescriptionData = {
   mood_key: string;
@@ -19,9 +20,10 @@ type PrescriptionData = {
   books: {
     title: string;
     author: string;
-    publisher: string;
+    publisher: string | null;
     cover_color: string;
     about: string;
+    cover_url: string | null;
   };
 };
 
@@ -89,16 +91,25 @@ export default function PrescriptionPage() {
         </div>
 
         <div className="flex p-10 gap-16">
+          {/* book cover , Link */}
           <div className="flex flex-col items-center flex-shrink-0">
-            <div
-              className="w-[200px] h-[313px] rounded-md mb-6"
-              style={{ backgroundColor: data.books.cover_color }}
+            <BookCover
+              isbn13={data.books.isbn13}
+              googleUrl={data.books.cover_url}
+              title={data.books.title}
             />
-            <Button variant="outline" className="rounded-sm h-8 w-[180px]">
-              Find on Kindle
-            </Button>
+            <a
+              href={`https://www.amazon.com/s?k=${data.books.isbn13}&i=digital-text`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button variant="outline" className="rounded-sm h-8 w-[150px]">
+                Find on Kindle
+              </Button>
+            </a>
           </div>
 
+          {/* mood key */}
           <div className="flex flex-col flex-1 min-w-0">
             <div className="flex items-center justify-between mb-4">
               <div className="flex gap-2">
@@ -116,7 +127,7 @@ export default function PrescriptionPage() {
             <BookDetail
               title={data.books.title}
               author={data.books.author}
-              publisher={data.books.publisher}
+              publisher={data.books.publisher ?? undefined}
               about={data.books.about}
             />
 

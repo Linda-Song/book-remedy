@@ -1,124 +1,7 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
-
-// Known mood keys, used to interpret free text
-const MOOD_KEYS = [
-  "comfort",
-  "excited",
-  "thrill",
-  "calm",
-  "think",
-  "laugh",
-  "escape",
-  "nostalgia",
-  "boost",
-  "romance",
-  "learn",
-  "courage",
-];
-
-const MODEL = "claude-haiku-5-5"; // check the current model name in the Anthropic docs
-const GENRE_KEYS = [
-  "fiction",
-  "mystery",
-  "thriller",
-  "romance",
-  "fantasy",
-  "scifi",
-  "historical",
-  "humor",
-  "classics",
-  "kids",
-  "teen",
-  "biography",
-  "self-growth",
-  "psychology",
-  "philosophy",
-  "science",
-  "nature",
-  "history",
-  "poetry",
-  "travel",
-];
-
-// Which maturity levels each genre may show
-function allowedMaturity(genre: string | null): string[] {
-  if (genre === "kids") return ["all_ages"];
-  if (genre === "teen") return ["all_ages", "teen"];
-  return ["all_ages", "teen", "adult"];
-}
-
-type Pick = { isbn13: string; reason: string; dosage: string };
-
-// Ask Claude to choose one candidate and write the reason and dosage
-async function askClaude(
-  moodText: string,
-  genreKey: string | null,
-  candidates: {
-    isbn13: string;
-    title: string;
-    author: string;
-    about: string;
-  }[],
-): Promise<Pick | null> {
-  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-
-  if (!apiKey) return null;
-
-  const prompt = `You are a warm, careful book recommender.
-The reader feels: "${moodText}"
-Preferred genre: ${genreKey ?? "any"}
-
-Choose exactly ONE book from this list (use its isbn13 exactly):
-${candidates
-  .map((c) => `- ${c.isbn13} | ${c.title} by ${c.author} | ${c.about}`)
-  .join("\n")}
-
-Reply with JSON only, no other text:
-{"isbn13": "...", "reason": "1-2 warm sentences on why this fits the reader", "dosage": "a short reading suggestion, e.g. 20 pages each evening"}`;
-
-  try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 1000,
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
-
-    if (!res.ok) {
-      console.error("Claude API error:", res.status, await res.text());
-      return null;
-    }
-
-    const json = await res.json();
-    // The first block may not be text, so look for the text block
-    const text: string =
-      json.content?.find((c: { type: string }) => c.type === "text")?.text ??
-      "";
-    if (!text.includes("{")) {
-      console.error("No JSON in response:", JSON.stringify(json).slice(0, 400));
-      return null;
-    }
-    const parsed = JSON.parse(
-      text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1),
-    );
-
-    // Validate: the pick must be one of the candidates we offered
-    if (!candidates.some((c) => c.isbn13 === parsed.isbn13)) return null;
-    if (typeof parsed.reason !== "string" || typeof parsed.dosage !== "string")
-      return null;
-    return parsed as Pick;
-  } catch (err) {
-    console.error("Claude call failed:", err);
-    return null;
-  }
-}
+import { GENRE_KEYS, MOOD_KEYS } from "./constants.ts";
+import { askClaude } from "./ai.ts";
+import { findCandidates } from "./candidates.ts";
 
 Deno.serve(async (req) => {
   try {
@@ -167,25 +50,12 @@ Deno.serve(async (req) => {
     // Only accept a known genre; anything else means "any genre"
     const genre = GENRE_KEYS.includes(genreKey) ? genreKey : null;
 
-    let query = supabase
-      .from("book_moods")
-      .select("isbn13, score, books!inner(*)")
-      .eq("mood_key", moodKey)
-      .in("books.maturity", allowedMaturity(genre));
-
-    if (genre) {
-      // Only books tagged with the chosen genre
-      query = query.contains("books.genres", [genre]);
-    } else {
-      // No genre chosen: keep children's books out of general picks
-      query = query.not("books.genres", "cs", "{kids}");
-    }
-
-    const { data: candidates, error: candidateError } = await query
-      .order("score", { ascending: false })
-      .limit(10);
-
-    if (candidateError || !candidates || candidates.length === 0) {
+    const { candidates, error: candidateError } = await findCandidates(
+      supabase,
+      moodKey,
+      genre,
+    );
+    if (candidateError || candidates.length === 0) {
       return new Response(JSON.stringify({ error: "no candidates found" }), {
         status: 404,
       });

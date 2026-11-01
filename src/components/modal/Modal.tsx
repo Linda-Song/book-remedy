@@ -1,10 +1,11 @@
 "use client";
 type Props = {
   open: boolean;
+  onClose: () => void;
   children: React.ReactNode;
 };
 
-export function Modal({ open, children }: Props) {
+export function Modal({ open, onClose, children }: Props) {
   if (!open) return null;
 
   return (

@@ -20,39 +20,13 @@ export default function GenrePage() {
   const user = useAuthStore((s) => s.user);
   const authLoading = useAuthStore((s) => s.authLoading);
 
-  async function handleGetPrescription() {
-    // 로그인했으면 로그인 토큰, 아니면 기본 키 사용
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token =
-      sessionData.session?.access_token ??
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL}/prescribe`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          moodKey: mood,
-          freeText: text,
-          genreKey: selected,
-          ownerKey: user ? user.id : getGuestId(),
-          isGuest: !user,
-        }),
-      },
-    );
-
-    if (!res.ok) {
-      const error = await res.json();
-      console.error("Failed to get prescription:", error);
-      return;
-    }
-    const data = await res.json();
-    router.push(`/prescribing?id=${data.prescription.id}`);
+  function handleGetPrescription() {
+    // Pass the choices along; the prescribing page makes the actual request
+    const params = new URLSearchParams();
+    if (mood) params.set("mood", mood);
+    if (text) params.set("text", text);
+    if (selected) params.set("genre", selected);
+    router.push(`/prescribing?${params.toString()}`);
   }
 
   return (
