@@ -11,11 +11,16 @@ type Props = {
   onDismiss: () => void;
 };
 
+type Mode = "signin" | "signup";
+
 export function AuthPrompt({ type, onDismiss }: Props) {
   const { title, description } = AUTH_PROMPTS[type];
 
+  // After a prescription most people are new, so default to sign up there
+  const [mode, setMode] = useState<Mode>(
+    type === "signin" ? "signin" : "signup",
+  );
   const [showEmail, setShowEmail] = useState(false);
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -27,6 +32,17 @@ export function AuthPrompt({ type, onDismiss }: Props) {
       options: { redirectTo: window.location.href },
     });
     if (error) setError(error.message);
+  }
+
+  // Turn raw Supabase errors into friendly messages
+  function friendlyError(message: string) {
+    if (message.includes("Invalid login credentials")) {
+      return "Wrong email or password. New here? Switch to Sign up.";
+    }
+    if (message.includes("already registered")) {
+      return "This email already has an account. Switch to Sign in.";
+    }
+    return message;
   }
 
   async function handleEmailSubmit() {
@@ -41,7 +57,7 @@ export function AuthPrompt({ type, onDismiss }: Props) {
     setLoading(false);
 
     if (error) {
-      setError(error.message);
+      setError(friendlyError(error.message));
       return;
     }
     onDismiss();
@@ -54,10 +70,10 @@ export function AuthPrompt({ type, onDismiss }: Props) {
         alt="caterpillar"
         width={220}
         height={70}
-      ></Image>
-      <h2 className="text-2xl font-extrabold mb-2 ">{title}</h2>
+      />
+      <h2 className="text-2xl font-extrabold mb-2">{title}</h2>
       <p className="text-sm text-text-secondary mb-6">{description}</p>
-      {/* oAuth login  */}
+
       <Button
         variant="outline"
         className="w-full h-12 mb-3"
@@ -70,19 +86,38 @@ export function AuthPrompt({ type, onDismiss }: Props) {
         className="w-full h-12 mb-3"
         onClick={() => handleOAuth("github")}
       >
-        Continue with Github
+        Continue with GitHub
       </Button>
 
-      {/* email login */}
       {!showEmail ? (
         <button
           onClick={() => setShowEmail(true)}
           className="text-sm font-bold text-green-dark mb-3"
         >
-          use email instead
+          Use email instead
         </button>
       ) : (
         <div className="w-full flex flex-col gap-2 mb-3">
+          {/* Sign in / Sign up tabs */}
+          <div className="flex rounded-xl bg-bg-tint p-1 mb-1">
+            {(["signin", "signup"] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => {
+                  setMode(m);
+                  setError(null);
+                }}
+                className={`flex-1 h-9 rounded-lg text-sm font-bold ${
+                  mode === m
+                    ? "bg-white text-green-dark shadow-sm"
+                    : "text-text-muted"
+                }`}
+              >
+                {m === "signin" ? "Sign in" : "Sign up"}
+              </button>
+            ))}
+          </div>
+
           <input
             type="email"
             placeholder="Email"
@@ -92,7 +127,7 @@ export function AuthPrompt({ type, onDismiss }: Props) {
           />
           <input
             type="password"
-            placeholder="password (6+ characters)"
+            placeholder="Password (6+ characters)"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="w-full h-11 rounded-xl border border-border-light px-3 text-sm"
@@ -105,18 +140,9 @@ export function AuthPrompt({ type, onDismiss }: Props) {
           >
             {loading ? "..." : mode === "signup" ? "Create account" : "Sign in"}
           </Button>
-          <button
-            onClick={() =>
-              setMode((m) => (m === "signin" ? "signup" : "signin"))
-            }
-            className="text-xs text-text-secondary"
-          >
-            {mode === "signin"
-              ? "No account? Sign up"
-              : "Have an account? Sign in"}
-          </button>
         </div>
       )}
+
       {error && <p className="text-xs text-danger mb-2">{error}</p>}
 
       <button
