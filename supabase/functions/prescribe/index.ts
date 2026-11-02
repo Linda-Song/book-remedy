@@ -1,11 +1,29 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import { GENRE_KEYS, MOOD_KEYS } from "./constants.ts";
+import {
+  GENRE_KEYS,
+  MOOD_KEYS,
+  SUPPORT_NOTE,
+  isCrisisText,
+} from "./constants.ts";
 import { askClaude } from "./ai.ts";
 import { findCandidates } from "./candidates.ts";
 
 Deno.serve(async (req) => {
   try {
-    const { moodKey: rawMood, genreKey, ownerKey, freeText } = await req.json();
+    const {
+      moodKey: rawMood,
+      genreKey,
+      ownerKey,
+      freeText,
+      skipCrisis,
+    } = await req.json();
+
+    // Checked before the usage limit, so it never uses up a prescription
+    if (!skipCrisis && freeText && isCrisisText(freeText)) {
+      return new Response(JSON.stringify({ crisis: true }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -43,12 +61,18 @@ Deno.serve(async (req) => {
         status: 429,
       });
     }
-
+    // The text was flagged but the reader chose to continue: stay gentle
+    const flagged = !!freeText && isCrisisText(freeText);
     // Free text without a mood: use a default until Claude picks among candidates
-    const moodKey = MOOD_KEYS.includes(rawMood) ? rawMood : "comfort";
+    const moodKey = flagged
+      ? "comfort"
+      : MOOD_KEYS.includes(rawMood)
+        ? rawMood
+        : "comfort";
 
-    // Only accept a known genre; anything else means "any genre"
-    const genre = GENRE_KEYS.includes(genreKey) ? genreKey : null;
+    // Only accept a known genre; anything else means "any genre".
+    // A flagged text ignores the genre so the pick can stay gentle.
+    const genre = !flagged && GENRE_KEYS.includes(genreKey) ? genreKey : null;
 
     const { candidates, error: candidateError } = await findCandidates(
       supabase,
@@ -79,9 +103,13 @@ Deno.serve(async (req) => {
     const picked = ai
       ? candidates.find((c: any) => c.isbn13 === ai.isbn13)!
       : candidates[0];
-    const reason =
+    const baseReason =
       ai?.reason ??
-      "You wanted something for this mood, and this book fits well.";
+      (flagged
+        ? "I'm sorry things feel so heavy right now. This is a gentle read to keep you company."
+        : "You wanted something for this mood, and this book fits well.");
+    const reason =
+      ai?.heavy || flagged ? `${baseReason} ${SUPPORT_NOTE}` : baseReason;
     const dosage = ai?.dosage ?? "20 pages in the evening, for one week.";
 
     const { data: prescription, error: insertError } = await supabase

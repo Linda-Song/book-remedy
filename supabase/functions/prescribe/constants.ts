@@ -45,3 +45,17 @@ export function allowedMaturity(genre: string | null): string[] {
   if (genre === "teen") return ["all_ages", "teen"];
   return ["all_ages", "teen", "adult"];
 }
+
+// Clear statements about suicide or self-harm
+const CRISIS_PATTERNS = [
+  /\b(suicid\w*|kill myself|end (my life|it all)|want to die|wanna die|take my own life|better off dead|no reason to live|self[- ]?harm\w*|hurt myself|cut myself)\b/i,
+  /\b(don'?t want to (live|be alive|exist))\b/i,
+];
+
+export function isCrisisText(text: string): boolean {
+  return CRISIS_PATTERNS.some((p) => p.test(text));
+}
+
+// Fixed line appended when the reader sounds heavy (never written by the AI)
+export const SUPPORT_NOTE =
+  "If things feel heavy, talking to someone you trust or a health professional can help.";

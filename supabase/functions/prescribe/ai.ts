@@ -1,6 +1,11 @@
 import { MODEL } from "./constants.ts";
 
-export type Pick = { isbn13: string; reason: string; dosage: string };
+export type Pick = {
+  isbn13: string;
+  reason: string;
+  dosage: string;
+  heavy?: boolean;
+};
 
 export type Candidate = {
   isbn13: string;
@@ -32,12 +37,14 @@ ${candidates
 
 Rules for "reason" (2-3 sentences):
 - Speak directly to the reader's situation or feeling, using their own words where natural.
+- If the reader sounds sad, lonely, exhausted, or overwhelmed, begin with one short, gentle sentence acknowledging how they feel, then move to the book.
 - Name one or two specific things in the book (a character, setting, tone, or idea from the description) that answer what they need.
 - Do not just summarize the book. Do not invent details that are not in the description.
+- Never give medical advice or diagnose.
+- Never mention crisis lines, phone numbers, emergency services, or suicide directly. The app shows support information separately. Keep the empathy to one short, gentle sentence.
 
 Reply with JSON only, no other text:
-{"isbn13": "...", "reason": "...", "dosage": "a short reading suggestion, e.g. 20 pages each evening"}`;
-
+{"isbn13": "...", "reason": "...", "dosage": "a short reading suggestion, e.g. 20 pages each evening", "heavy": true if the reader sounds sad, lonely, exhausted or overwhelmed, otherwise false}`;
   try {
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -49,6 +56,7 @@ Reply with JSON only, no other text:
       body: JSON.stringify({
         model: MODEL,
         max_tokens: 1000,
+        thinking: { type: "disabled" },
         messages: [{ role: "user", content: prompt }],
       }),
     });
