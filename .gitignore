@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# generated / local-only
+scripts/*.json
+supabase/*.generated.sql
+supabase/seed.old549.sql
+supabase/snippets/
