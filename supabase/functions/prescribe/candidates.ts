@@ -36,6 +36,5 @@ export async function findCandidates(
   const candidates = (rows ?? [])
     .filter((c: any) => !seen.has(c.isbn13) && seen.add(c.isbn13))
     .slice(0, 10);
-
   return { candidates, error };
 }

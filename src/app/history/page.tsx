@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/server/db/client";
 import { getGuestId } from "@/lib/guestId";
 import { useAuthStore } from "@/features/auth/authStore";
+import { BookCover } from "@/components/books/BookCover";
 
 const FILTERS = [
   "All",
@@ -20,9 +21,10 @@ type HistoryItem = {
   status: string;
   created_at: string;
   books: {
+    isbn13: string;
     title: string;
     author: string;
-    cover_color: string;
+    cover_url: string | null;
   };
   reviews: { rating: number }[] | { rating: number } | null;
 };
@@ -47,7 +49,7 @@ export default function HistoryPage() {
       const query = supabase
         .from("prescriptions")
         .select(
-          "id, status, created_at, books(title, author, cover_color), reviews(rating)",
+          "id, status, created_at, books(isbn13, title, author, cover_url), reviews(rating)",
         )
         .order("created_at", { ascending: false });
 
@@ -153,9 +155,11 @@ export default function HistoryPage() {
                 onClick={() => router.push(`/me/prescriptions/${book.id}`)}
                 className="flex flex-col cursor-pointer"
               >
-                <div
-                  className="w-full aspect-[2/3] rounded-lg"
-                  style={{ backgroundColor: book.books.cover_color }}
+                <BookCover
+                  isbn13={book.books.isbn13}
+                  googleUrl={book.books.cover_url}
+                  title={book.books.title}
+                  fluid
                 />
                 <p className="text-xs font-bold text-text-primary mt-2 truncate">
                   {book.books.title}
@@ -189,9 +193,12 @@ export default function HistoryPage() {
                 onClick={() => router.push(`/me/prescriptions/${book.id}`)}
                 className="flex items-center gap-3 p-4 border-t border-border-light first:border-t-0 cursor-pointer"
               >
-                <div
-                  className="w-[44px] h-[64px] rounded-md flex-shrink-0"
-                  style={{ backgroundColor: book.books.cover_color }}
+                <BookCover
+                  isbn13={book.books.isbn13}
+                  googleUrl={book.books.cover_url}
+                  title={book.books.title}
+                  width={44}
+                  height={64}
                 />
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-sm text-text-primary">

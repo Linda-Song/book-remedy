@@ -11,6 +11,7 @@ import { WhyThisBook } from "@/components/prescription/WhyThisBook";
 import { supabase } from "@/server/db/client";
 import { useAuthStore } from "@/features/auth/authStore";
 import { BookCover } from "@/components/books/BookCover";
+import { genreLabel } from "../data/genre";
 
 type PrescriptionData = {
   mood_key: string;
@@ -18,10 +19,10 @@ type PrescriptionData = {
   reason: string;
   dosage: string;
   books: {
+    isbn13: string;
     title: string;
     author: string;
     publisher: string | null;
-    cover_color: string;
     about: string;
     cover_url: string | null;
   };
@@ -57,7 +58,7 @@ export default function PrescriptionPage() {
     fetchPrescription();
   }, [id]);
 
-  // 회원이 답하면 DB에 저장
+  // Save the answer to the database for signed-in members
   async function saveFeedback(value: "yes" | "no") {
     const { error } = await supabase
       .from("prescriptions")
@@ -91,12 +92,13 @@ export default function PrescriptionPage() {
         </div>
 
         <div className="flex p-10 gap-16">
-          {/* book cover , Link */}
+          {/* book cover, Link */}
           <div className="flex flex-col items-center flex-shrink-0">
             <BookCover
               isbn13={data.books.isbn13}
               googleUrl={data.books.cover_url}
               title={data.books.title}
+              className="mb-6"
             />
             <a
               href={`https://www.amazon.com/s?k=${data.books.isbn13}&i=digital-text`}
@@ -118,7 +120,7 @@ export default function PrescriptionPage() {
                 </span>
                 {data.genre_key && (
                   <span className="text-xs font-bold px-3 py-1 rounded-full bg-green-light text-text-primary">
-                    {data.genre_key}
+                    {genreLabel(data.genre_key)}
                   </span>
                 )}
               </div>

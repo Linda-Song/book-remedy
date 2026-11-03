@@ -15,26 +15,17 @@ export const MOOD_KEYS = [
 ];
 
 export const GENRE_KEYS = [
-  "fiction",
   "mystery",
   "thriller",
   "romance",
   "fantasy",
-  "scifi",
-  "historical",
+  "fiction",
   "humor",
-  "classics",
-  "kids",
-  "teen",
   "biography",
   "self-growth",
-  "psychology",
-  "philosophy",
+  "mind",
   "science",
-  "nature",
-  "history",
-  "poetry",
-  "travel",
+  "childlike",
 ];
 
 export const MODEL = "claude-haiku-5-5"; // check the current model name in the Anthropic docs

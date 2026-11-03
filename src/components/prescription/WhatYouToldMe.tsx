@@ -17,15 +17,19 @@ export function WhatYouToldMe({ mood, genre, freeText }: Props) {
           <Lock size={11} /> Only you can see this
         </span>
       </div>
-      <div className="flex gap-2 mb-2">
+      <div className={`flex gap-2 ${freeText ? "mb-2" : ""}`}>
         <span className="text-xs font-bold px-3 py-1 rounded-full bg-white text-green-dark">
           {mood}
         </span>
-        <span className="text-xs font-bold px-3 py-1 rounded-full bg-green-light text-text-primary">
-          {genre}
-        </span>
+        {genre && (
+          <span className="text-xs font-bold px-3 py-1 rounded-full bg-green-light text-text-primary">
+            {genre}
+          </span>
+        )}
       </div>
-      <p className="text-text-muted text-sm ">&quot;{freeText}&quot;</p>
+      {freeText && (
+        <p className="text-text-muted text-sm">&quot;{freeText}&quot;</p>
+      )}
     </div>
   );
 }

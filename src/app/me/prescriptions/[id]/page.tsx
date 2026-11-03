@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/Button";
 import { ChevronLeft, Pencil } from "lucide-react";
 import { supabase } from "@/server/db/client";
 import { useState, useEffect } from "react";
+import { BookCover } from "@/components/books/BookCover";
+import { genreLabel } from "@/app/data/genre";
 
 type PrescriptionDetail = {
   id: string;
@@ -23,10 +25,11 @@ type PrescriptionDetail = {
   finished_date: string | null;
   created_at: string;
   books: {
+    isbn13: string;
     title: string;
     author: string;
-    publisher: string;
-    cover_color: string;
+    publisher: string | null;
+    cover_url: string | null;
     about: string;
   };
   reviews:
@@ -104,14 +107,22 @@ export default function PrescriptionDetailPage() {
       <div className="flex gap-16">
         {/* Left: cover + rating + button */}
         <div className="flex flex-col items-center flex-shrink-0">
-          <div
-            className="w-[200px] h-[313px] rounded-md mb-3"
-            style={{ backgroundColor: book.books.cover_color }}
+          <BookCover
+            isbn13={book.books.isbn13}
+            googleUrl={book.books.cover_url}
+            title={book.books.title}
+            className="mb-3"
           />
           {review && <StarRating rating={review.rating} />}
-          <Button variant="outline" className="rounded-sm h-8 w-[180px] mt-3">
-            Find on Kindle
-          </Button>
+          <a
+            href={`https://www.amazon.com/s?k=${book.books.isbn13}&i=digital-text`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Button variant="outline" className="rounded-sm h-8 w-[150px] mt-3">
+              Find on Kindle
+            </Button>
+          </a>
         </div>
 
         {/* Right: info */}
@@ -132,7 +143,7 @@ export default function PrescriptionDetailPage() {
           <BookDetail
             title={book.books.title}
             author={book.books.author}
-            publisher={book.books.publisher}
+            publisher={book.books.publisher ?? undefined}
             about={book.books.about}
           />
 
@@ -140,7 +151,7 @@ export default function PrescriptionDetailPage() {
           <div className="rounded-2xl bg-bg-tint p-4 mb-4 space-y-4">
             <WhatYouToldMe
               mood={book.mood_key}
-              genre={book.genre_key ?? ""}
+              genre={genreLabel(book.genre_key)}
               freeText={book.free_text ?? ""}
             />
             <div className="border-t border-white pt-4">

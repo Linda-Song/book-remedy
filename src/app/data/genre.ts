@@ -1,22 +1,22 @@
+// Genres shown on the genre page, in display order.
+// `key` is stored in the database; `label` is what the reader sees.
 export const GENRES = [
-  { key: "fiction", label: "Fiction" },
   { key: "mystery", label: "Mystery" },
   { key: "thriller", label: "Thriller" },
   { key: "romance", label: "Romance" },
   { key: "fantasy", label: "Fantasy" },
-  { key: "scifi", label: "Sci-Fi" },
-  { key: "historical", label: "Historical" },
+  { key: "fiction", label: "Fiction" },
   { key: "humor", label: "Humor" },
-  { key: "classics", label: "Classics" },
-  { key: "kids", label: "Kids" },
-  { key: "teen", label: "Teen" },
   { key: "biography", label: "Biography" },
-  { key: "self-growth", label: "Self-Growth" },
-  { key: "psychology", label: "Psychology" },
-  { key: "philosophy", label: "Philosophy" },
+  { key: "self-growth", label: "Self-Help" },
+  { key: "mind", label: "Mind" },
   { key: "science", label: "Science" },
-  { key: "nature", label: "Nature" },
-  { key: "history", label: "History" },
-  { key: "poetry", label: "Poetry" },
-  { key: "travel", label: "Travel" },
+  { key: "childlike", label: "Childlike" },
 ];
+
+// Turns a stored genre key into the label shown to readers.
+// Unknown (older) keys are shown as they are.
+export function genreLabel(key: string | null | undefined): string {
+  if (!key) return "";
+  return GENRES.find((g) => g.key === key)?.label ?? key;
+}

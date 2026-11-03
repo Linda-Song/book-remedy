@@ -6,12 +6,15 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/server/db/client";
 import { getGuestId } from "@/lib/guestId";
 import { useAuthStore } from "@/features/auth/authStore";
+import { BookCover } from "@/components/books/BookCover";
+import { genreLabel } from "../data/genre";
 
 type PrescriptionRecord = {
   id: string;
   title: string;
   author: string;
-  coverColor: string;
+  isbn13: string;
+  coverUrl: string | null;
   mood: string;
   genre: string;
   status: string;
@@ -24,9 +27,10 @@ type RawPrescription = {
   mood_key: string;
   genre_key: string | null;
   books: {
+    isbn13: string;
     title: string;
     author: string;
-    cover_color: string;
+    cover_url: string | null;
   };
 };
 
@@ -65,7 +69,7 @@ export default function Me() {
       const query = supabase
         .from("prescriptions")
         .select(
-          "id, created_at, status, mood_key, genre_key, books(title, author, cover_color)",
+          "id, created_at, status, mood_key, genre_key, books(isbn13, title, author, cover_url)",
         )
         .gte("created_at", startOfMonth)
         .lt("created_at", startOfNextMonth)
@@ -97,9 +101,10 @@ export default function Me() {
           id: row.id,
           title: row.books.title,
           author: row.books.author,
-          coverColor: row.books.cover_color,
+          isbn13: row.books.isbn13,
+          coverUrl: row.books.cover_url,
           mood: row.mood_key,
-          genre: row.genre_key ?? "",
+          genre: genreLabel(row.genre_key),
           status: row.status,
         });
       });
@@ -144,7 +149,10 @@ export default function Me() {
             Every prescription, in one place.
           </p>
         </div>
-        <button className="bg-green text-white text-sm font-bold px-5 py-2.5 rounded-xl">
+        <button
+          onClick={() => router.push("/")}
+          className="bg-green text-white text-sm font-bold px-5 py-2.5 rounded-xl"
+        >
           + New prescription
         </button>
       </div>
@@ -198,9 +206,13 @@ export default function Me() {
                   onClick={() => router.push(`/me/prescriptions/${book.id}`)}
                   className="flex items-center justify-between py-3 border-t border-border-light first:border-t-0 cursor-pointer"
                 >
-                  <div
-                    className="w-[44px] h-[64px] rounded-md flex-shrink-0 mr-4"
-                    style={{ backgroundColor: book.coverColor }}
+                  <BookCover
+                    isbn13={book.isbn13}
+                    googleUrl={book.coverUrl}
+                    title={book.title}
+                    width={44}
+                    height={64}
+                    className="flex-shrink-0 mr-4"
                   />
 
                   <div className="flex-1 min-w-0">

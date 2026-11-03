@@ -5,10 +5,12 @@ import {
   SUPPORT_NOTE,
   isCrisisText,
 } from "./constants.ts";
-import { askClaude } from "./ai.ts";
+import { askClaude, interpretReader } from "./ai.ts";
 import { findCandidates } from "./candidates.ts";
 
 Deno.serve(async (req) => {
+  // Gives back the counted prescription if nothing was delivered
+  let refund = async () => {};
   try {
     const {
       moodKey: rawMood,
@@ -61,33 +63,74 @@ Deno.serve(async (req) => {
         status: 429,
       });
     }
+
+    // From here on, any failure gives the prescription back
+    let refunded = false;
+    refund = async () => {
+      if (refunded) return;
+      refunded = true;
+      try {
+        await supabase.rpc("restore_usage", { p_owner_key: owner });
+      } catch (err) {
+        console.error("Failed to restore usage:", err);
+      }
+    };
+
     // The text was flagged but the reader chose to continue: stay gentle
     const flagged = !!freeText && isCrisisText(freeText);
-    // Free text without a mood: use a default until Claude picks among candidates
+
+    // What the reader chose (null means "left open")
+    const knownMood = MOOD_KEYS.includes(rawMood) ? rawMood : null;
+    // A flagged text ignores the genre so the pick can stay gentle.
+    const chosenGenre =
+      !flagged && GENRE_KEYS.includes(genreKey) ? genreKey : null;
+
+    // Describe the reader's mood for the prompt
+    const moodText =
+      freeText?.trim() || `I'm in the mood for: ${knownMood ?? "comfort"}`;
+
+    // Ask Claude only when the reader left the mood or the genre open
+    const read =
+      !flagged && (!knownMood || !chosenGenre)
+        ? await interpretReader(knownMood, moodText)
+        : null;
+
     const moodKey = flagged
       ? "comfort"
-      : MOOD_KEYS.includes(rawMood)
-        ? rawMood
-        : "comfort";
+      : (knownMood ?? read?.mood ?? "comfort");
+    const aiGenre = chosenGenre ? null : (read?.genre ?? null);
+    const genre = chosenGenre ?? aiGenre;
+    console.log("read:", { knownMood, chosenGenre, read, moodKey, genre });
 
-    // Only accept a known genre; anything else means "any genre".
-    // A flagged text ignores the genre so the pick can stay gentle.
-    const genre = !flagged && GENRE_KEYS.includes(genreKey) ? genreKey : null;
-
-    const { candidates, error: candidateError } = await findCandidates(
+    let { candidates, error: candidateError } = await findCandidates(
       supabase,
       moodKey,
       genre,
     );
+
+    // If the AI-chosen genre has no books, try again with any genre
+    if (aiGenre && (candidateError || candidates.length === 0)) {
+      ({ candidates, error: candidateError } = await findCandidates(
+        supabase,
+        moodKey,
+        null,
+      ));
+    }
+
+    // If the AI-chosen genre has no books, try again with any genre
+    if (aiGenre && (candidateError || candidates.length === 0)) {
+      ({ candidates, error: candidateError } = await findCandidates(
+        supabase,
+        moodKey,
+        null,
+      ));
+    }
     if (candidateError || candidates.length === 0) {
+      await refund();
       return new Response(JSON.stringify({ error: "no candidates found" }), {
         status: 404,
       });
     }
-
-    // Describe the reader's mood for the prompt
-    const moodText = freeText?.trim() || `I'm in the mood for: ${moodKey}`;
-
     const ai = await askClaude(
       moodText,
       genre,
@@ -123,11 +166,13 @@ Deno.serve(async (req) => {
         isbn13: picked.isbn13,
         reason,
         dosage,
+        source: ai ? "ai" : "fallback",
       })
       .select()
       .single();
 
     if (insertError) {
+      await refund();
       return new Response(JSON.stringify({ error: insertError.message }), {
         status: 500,
       });
@@ -137,6 +182,7 @@ Deno.serve(async (req) => {
       headers: { "Content-Type": "application/json" },
     });
   } catch (err) {
+    await refund();
     return new Response(JSON.stringify({ error: String(err) }), {
       status: 500,
     });

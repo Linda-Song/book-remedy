@@ -6,18 +6,16 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getGuestId } from "@/lib/guestId";
-import { supabase } from "@/server/db/client";
 import { useAuthStore } from "@/features/auth/authStore";
 
 export default function GenrePage() {
   const [selected, setSelected] = useState<string | null>(null);
+  const [anyGenre, setAnyGenre] = useState(false); // "Pick for you" chosen
   const router = useRouter();
   const searchParams = useSearchParams();
   const mood = searchParams.get("mood");
   const text = searchParams.get("text");
 
-  const user = useAuthStore((s) => s.user);
   const authLoading = useAuthStore((s) => s.authLoading);
 
   function handleGetPrescription() {
@@ -37,35 +35,40 @@ export default function GenrePage() {
             What Kind of book are you in the mood for?
           </p>
           <span className="text-text-secondary">
-            Pick a genre, or let me surprise you.
+            Pick a genre, or let me choose for you.
           </span>
         </div>
         <div className="flex flex-col items-center justify-center">
-          <div className="grid grid-cols-4 gap-3 mb-3 w-[600px] mx-auto">
+          <div className="grid grid-cols-4 gap-3 mb-10 w-[600px] mx-auto">
             {GENRES.map((genre) => (
               <GenreButton
                 key={genre.key}
                 label={genre.label}
                 selected={selected === genre.key}
-                onClick={() => setSelected(genre.key)}
+                onClick={() => {
+                  setSelected(genre.key);
+                  setAnyGenre(false);
+                }}
               />
             ))}
-          </div>
 
-          <Button
-            variant="genre"
-            selected={selected === null}
-            onClick={() => setSelected(null)}
-            className="h-[40px] w-[600px] mb-10"
-          >
-            Surprise me
-          </Button>
+            {/* Not a genre: lets the app choose. Only the text color differs. */}
+            <GenreButton
+              label="Pick for you"
+              selected={anyGenre}
+              onClick={() => {
+                setAnyGenre(true);
+                setSelected(null);
+              }}
+              className={anyGenre ? "" : "text-green!"}
+            />
+          </div>
 
           <div className="flex items-center justify-center">
             <Button
               variant="primary"
               onClick={handleGetPrescription}
-              disabled={authLoading}
+              disabled={authLoading || (!selected && !anyGenre)}
               className="h-[40px] w-[320px] mb-3"
             >
               Get my prescription

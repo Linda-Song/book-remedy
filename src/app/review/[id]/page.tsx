@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { StarRatingInput } from "@/components/review/StarRatingInput";
 import { StarRating } from "@/components/prescription/StarRating";
 import { supabase } from "@/server/db/client";
+import { BookCover } from "@/components/books/BookCover";
 
 const STATUSES = ["To read", "Reading", "Finished", "Not for me"] as const;
 
@@ -25,9 +26,10 @@ type PrescriptionWithReview = {
   started_date: string | null;
   finished_date: string | null;
   books: {
+    isbn13: string;
     title: string;
     author: string;
-    cover_color: string;
+    cover_url: string | null;
   };
   reviews: ReviewRow[] | ReviewRow | null;
 };
@@ -58,7 +60,7 @@ export default function ReviewPage() {
       const { data, error } = await supabase
         .from("prescriptions")
         .select(
-          "id, status, started_date, finished_date, books(title, author, cover_color), reviews(*)",
+          "id, status, started_date, finished_date, books(isbn13, title, author, cover_url), reviews(*)",
         )
         .eq("id", id)
         .single();
@@ -181,9 +183,13 @@ export default function ReviewPage() {
         {/* Left: form */}
         <div className="flex-1 min-w-0 max-w-[560px]">
           <div className="flex items-center gap-3 mb-6">
-            <div
-              className="w-[56px] h-[80px] rounded-md flex-shrink-0"
-              style={{ backgroundColor: book.books.cover_color }}
+            <BookCover
+              isbn13={book.books.isbn13}
+              googleUrl={book.books.cover_url}
+              title={book.books.title}
+              width={56}
+              height={80}
+              className="flex-shrink-0"
             />
             <div>
               <p className="font-bold text-text-primary">{book.books.title}</p>
@@ -346,9 +352,12 @@ export default function ReviewPage() {
             <p className="text-xs font-bold text-text-primary mb-4">
               [Site name]
             </p>
-            <div
-              className="w-full aspect-[2/3] rounded-lg mb-4"
-              style={{ backgroundColor: book.books.cover_color }}
+            <BookCover
+              isbn13={book.books.isbn13}
+              googleUrl={book.books.cover_url}
+              title={book.books.title}
+              fluid
+              className="mb-4"
             />
             <div className="flex justify-center mb-2">
               <StarRating rating={rating} size={14} />
