@@ -102,10 +102,17 @@ Deno.serve(async (req) => {
     const genre = chosenGenre ?? aiGenre;
     console.log("read:", { knownMood, chosenGenre, read, moodKey, genre });
 
+    // Who the prescription belongs to (used to skip books already given)
+    const ownerRef = {
+      column: isGuest ? "guest_id" : "user_id",
+      value: owner,
+    } as const;
+
     let { candidates, error: candidateError } = await findCandidates(
       supabase,
       moodKey,
       genre,
+      ownerRef,
     );
 
     // If the AI-chosen genre has no books, try again with any genre
@@ -114,17 +121,10 @@ Deno.serve(async (req) => {
         supabase,
         moodKey,
         null,
+        ownerRef,
       ));
     }
 
-    // If the AI-chosen genre has no books, try again with any genre
-    if (aiGenre && (candidateError || candidates.length === 0)) {
-      ({ candidates, error: candidateError } = await findCandidates(
-        supabase,
-        moodKey,
-        null,
-      ));
-    }
     if (candidateError || candidates.length === 0) {
       await refund();
       return new Response(JSON.stringify({ error: "no candidates found" }), {
@@ -163,6 +163,8 @@ Deno.serve(async (req) => {
         mood_key: moodKey,
         free_text: freeText ?? null,
         genre_key: genre,
+        mood_by_ai: !flagged && !knownMood && !!read?.mood,
+        genre_by_ai: !!aiGenre,
         isbn13: picked.isbn13,
         reason,
         dosage,

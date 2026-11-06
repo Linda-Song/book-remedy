@@ -39,15 +39,15 @@ Rules for "reason" (2-3 sentences):
 - Speak directly to the reader's situation or feeling, using their own words where natural.
 - If the reader sounds sad, lonely, exhausted, or overwhelmed, begin with one short, gentle sentence acknowledging how they feel, then move to the book.
 - Name one or two specific things in the book (a character, setting, tone, or idea from the description) that answer what they need.
-- Do not just summarize the book. Do not invent details that are not in the description.
+- Do not just summarize the book. Only mention details that appear in the description above; never add plot points or relationships from your own memory.
 - Never give medical advice or diagnose.
 - Never mention crisis lines, phone numbers, emergency services, or suicide directly. The app shows support information separately. Keep the empathy to one short, gentle sentence.
 - The reader's words may be informal or ungrammatical. Do not quote them awkwardly: say "bored", not "boring", when they mean bored.
-
+- "heavy" is true only if the reader sounds deeply sad, hopeless, grieving, or in real distress. It is false for ordinary stress, tiredness, boredom or being busy.
 
 Reply with JSON only, no other text:
-{"isbn13": "...", "reason": "...", "dosage": "a short reading suggestion, e.g. 20 pages each evening", 
-"heavy": true only if the reader sounds deeply sad, hopeless, grieving, or in real distress; false for ordinary stress, tiredness, boredom or being busy}`;
+{"isbn13": "...", "reason": "...", "dosage": "a short reading suggestion, e.g. 20 pages each evening", "heavy": false}`;
+
   try {
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -111,7 +111,7 @@ ${knownMood ? `The reader already chose the mood: ${knownMood}. Keep it.` : ""}
 
 Choose the ONE mood and the ONE genre that would suit this reader best right now.
 Allowed moods: ${MOOD_KEYS.join(", ")}
-Allowed genres: ${GENRE_KEYS.join(", ")}
+Allowed genres: ${GENRE_KEYS.filter((g) => g !== "childlike").join(", ")}
 
 Reply with JSON only, no other text:
 {"mood": "one of the allowed moods", "genre": "one of the allowed genres"}`;
@@ -150,7 +150,10 @@ Reply with JSON only, no other text:
     // Validate: only accept values we know
     return {
       mood: MOOD_KEYS.includes(parsed.mood) ? parsed.mood : null,
-      genre: GENRE_KEYS.includes(parsed.genre) ? parsed.genre : null,
+      genre:
+        GENRE_KEYS.includes(parsed.genre) && parsed.genre !== "childlike"
+          ? parsed.genre
+          : null,
     };
   } catch (err) {
     console.error("interpretReader failed:", err);

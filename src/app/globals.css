@@ -29,6 +29,19 @@
   /* ── Etc ── */
   --color-apple: #e63a3a;
   --color-book-cream: #f6efd9;
+}
 
-  --font-sans: "Nunito Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
+/* Fonts come from next/font in layout.tsx (variables must be resolved at use time) */
+@theme inline {
+  --font-sans: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-fraunces), Georgia, serif;
+}
+
+/* Headings use the serif font */
+@layer base {
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-heading);
+  }
 }

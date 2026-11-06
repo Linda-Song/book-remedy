@@ -27,6 +27,8 @@ const CORE = {
 const CORE_MIN = 10; // books a core cell should have
 const MAX_PER_AUTHOR = 3;
 const MIN_YEAR = 2000;
+// Titles that say they are a later book: "The 20th Victim", "Book 3", "#5", "Volume 2"
+const SERIES_TITLE = /^(the\s+)?([2-9]|[1-9]\d+)(st|nd|rd|th)\b|\b(book|vol\.?|volume|part)\s*([2-9]|[1-9]\d+)\b|#\s*([2-9]|[1-9]\d+)\b/i;
 const YOUNG_LIST = /young-adult|middle-grade|childrens|picture|series/;
 
 // ---- 1) Apply the rules ----
@@ -35,7 +37,7 @@ const eligible = [];
 for (const [isbn, r] of Object.entries(classified)) {
   const b = enriched[isbn];
   if (!b) continue;
-  if (r.laterInSeries) { drop.series++; continue; }
+  if (r.laterInSeries || SERIES_TITLE.test(b.title ?? "")) { drop.series++; continue; }
   if (r.maturity === "explicit") { drop.explicit++; continue; }
 
   let genres = [
@@ -66,7 +68,7 @@ for (const [isbn, r] of Object.entries(classified)) {
     author: b.author,
     publisher: b.publisher ?? null,
     cover: b.cover ?? null,
-    about: [b.description ?? "", b.gDescription ?? ""].sort((x, y) => y.length - x.length)[0].replace(/<[^>]*>/g, "").slice(0, 700),
+    about: r.about ?? [b.description ?? "", b.gDescription ?? ""].sort((x, y) => y.length - x.length)[0].replace(/<[^>]*>/g, "").slice(0, 700),
     pages: b.pages ?? null,
     year: b.year ?? null,
     ratingsCount: b.ratingsCount ?? 0,

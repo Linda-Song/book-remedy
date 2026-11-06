@@ -127,8 +127,8 @@ export default function Me() {
 
   const dayRecords = selectedDay ? historyByDay[selectedDay] : null;
 
-  const STATS = [
-    { label: "Prescriptions", value: totalCount },
+  const STATS: { label: string; value: number; href?: string }[] = [
+    { label: "Prescriptions", value: totalCount, href: "/history" },
     { label: "Books finished", value: finishedCount },
     { label: "Days this month", value: prescriptionDays.length },
   ];
@@ -151,7 +151,7 @@ export default function Me() {
         </div>
         <button
           onClick={() => router.push("/")}
-          className="bg-green text-white text-sm font-bold px-5 py-2.5 rounded-xl"
+          className="rounded-xl bg-green px-5 py-2.5 text-sm font-bold text-white transition-colors hover:text-green-light"
         >
           + New prescription
         </button>
@@ -168,19 +168,38 @@ export default function Me() {
 
         {/* right */}
         <div className="flex flex-col gap-4 flex-1 min-w-0">
-          {/* stats */}
+          {/* stats; a stat with an href is clickable */}
           <div className="grid grid-cols-3 gap-3">
-            {STATS.map((stat) => (
-              <div
-                key={stat.label}
-                className="flex items-center justify-center gap-2 rounded-2xl border border-border-light bg-white py-3"
-              >
-                <span className="text-xl font-bold text-text-primary">
-                  {stat.value}
-                </span>
-                <span className="text-xs text-text-muted">{stat.label}</span>
-              </div>
-            ))}
+            {STATS.map((stat) => {
+              const box =
+                "flex items-center justify-center gap-2 rounded-2xl border border-border-light bg-white py-3";
+              const content = (
+                <>
+                  <span className="text-xl font-bold text-text-primary">
+                    {stat.value}
+                  </span>
+                  <span className="text-xs text-text-muted">{stat.label}</span>
+                </>
+              );
+
+              const href = stat.href;
+              if (!href) {
+                return (
+                  <div key={stat.label} className={box}>
+                    {content}
+                  </div>
+                );
+              }
+              return (
+                <button
+                  key={stat.label}
+                  onClick={() => router.push(href)}
+                  className={`${box} cursor-pointer transition hover:-translate-y-0.5 hover:border-green hover:shadow-md`}
+                >
+                  {content}
+                </button>
+              );
+            })}
           </div>
 
           {/* selected day */}
@@ -193,7 +212,7 @@ export default function Me() {
               </p>
               <button
                 onClick={() => router.push("/history")}
-                className="text-xs font-bold text-green-dark"
+                className="-mr-2.5 rounded-lg px-2.5 py-1 text-xs font-bold text-green-dark transition-colors hover:bg-[#f1f8df]"
               >
                 View all
               </button>

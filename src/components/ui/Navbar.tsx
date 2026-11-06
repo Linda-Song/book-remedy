@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { Modal } from "@/components/modal/Modal";
 import { AuthPrompt } from "@/components/modal/AuthPrompt";
@@ -20,9 +21,18 @@ export function Navbar() {
 
   return (
     <>
-      <header className="h-14 px-16 flex items-center justify-between bg-bg-tint">
-        <Link href="/" className="flex items-center gap-3">
-          <span>RR</span>
+      <header className="h-14 px-16 flex items-center justify-between bg-white">
+        <Link href="/" className="flex items-center gap-2">
+          {/* Mascot on a soft tint circle; thin border keeps it visible on white */}
+          <span className="flex h-10 w-10 items-center justify-center rounded-full  bg-bg-tint">
+            <Image
+              src="/images/caterpillar/icon_outline.png"
+              alt=""
+              width={30}
+              height={30}
+              priority
+            />
+          </span>
           <span className="font-bold text-lg text-text-primary">
             ReadRemedy
           </span>

@@ -101,6 +101,13 @@ export default function HistoryPage() {
 
   return (
     <div className="py-10">
+      <button
+        onClick={() => router.push("/me")}
+        className="mb-6 flex items-center gap-1 text-sm font-bold text-text-secondary transition-colors hover:text-green"
+      >
+        <ChevronLeft size={16} /> My page
+      </button>
+
       <div className="mb-2">
         <p className="text-3xl font-extrabold text-text-primary">
           My prescriptions
@@ -146,29 +153,32 @@ export default function HistoryPage() {
 
       {/* content */}
       {viewMode === "grid" ? (
-        <div className="grid grid-cols-5 gap-4 mt-4">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-6 mt-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {pageItems.map((book) => {
             const review = getReview(book);
             return (
               <div
                 key={book.id}
                 onClick={() => router.push(`/me/prescriptions/${book.id}`)}
-                className="flex flex-col cursor-pointer"
+                className="flex cursor-pointer flex-col items-center text-center"
               >
-                <BookCover
-                  isbn13={book.books.isbn13}
-                  googleUrl={book.books.cover_url}
-                  title={book.books.title}
-                  fluid
-                />
-                <p className="text-xs font-bold text-text-primary mt-2 truncate">
+                {/* Cover is capped in width so it does not grow with the screen */}
+                <div className="w-full max-w-[150px]">
+                  <BookCover
+                    isbn13={book.books.isbn13}
+                    googleUrl={book.books.cover_url}
+                    title={book.books.title}
+                    fluid
+                  />
+                </div>
+                <p className="mt-2 w-full truncate text-xs font-bold text-text-primary">
                   {book.books.title}
                 </p>
-                <p className="text-[11px] text-text-muted truncate">
+                <p className="w-full truncate text-[11px] text-text-muted">
                   {book.books.author}
                 </p>
                 {review && (
-                  <div className="flex items-center gap-0.5 mt-1">
+                  <div className="mt-1 flex items-center justify-center gap-0.5">
                     {Array.from({ length: 5 }).map((_, i) => (
                       <Star
                         key={i}
@@ -184,7 +194,8 @@ export default function HistoryPage() {
           })}
         </div>
       ) : (
-        <div className="flex flex-col mt-4 rounded-2xl border border-border-light bg-white">
+        // list view
+        <div className="flex flex-col mt-8 rounded-2xl border border-border-light bg-white">
           {pageItems.map((book) => {
             const review = getReview(book);
             return (
@@ -207,7 +218,11 @@ export default function HistoryPage() {
                   <p className="text-xs text-text-muted">{book.books.author}</p>
                 </div>
                 <span className="text-xs text-text-muted flex-shrink-0">
-                  {new Date(book.created_at).toLocaleDateString()}
+                  {new Date(book.created_at).toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
                 </span>
                 {review && (
                   <div className="flex items-center gap-0.5 flex-shrink-0">

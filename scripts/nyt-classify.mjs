@@ -66,7 +66,9 @@ for (const b of enriched) {
   if (!b.checked) continue;
   const about = [b.description ?? "", b.gDescription ?? ""]
     .sort((x, y) => y.length - x.length)[0]
-    .replace(/<[^>]*>/g, "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
     .slice(0, 700);
   if (about.length < 150) {
     skipped.noDesc++;
@@ -84,7 +86,7 @@ console.log(
   skipped,
 );
 if (LIMIT) todo = todo.slice(0, LIMIT);
-todo = todo.filter((b) => !cache.books[b.isbn13]);
+todo = todo.filter((b) => !cache.books[b.isbn13]?.about);
 console.log(`to classify now: ${todo.length}`);
 
 // ---- 2) Ask Claude ----
@@ -144,8 +146,10 @@ Books widely sold in mainstream bookstores, bestsellers, classics, and award win
 
 5. "later_in_series": true only if this book is clearly NOT the first book of a series (the description says so, or you are sure from the title). Otherwise false.
 
+6. "about": 3 to 5 plain sentences describing what the book is about. Use ONLY facts stated in the description above. Leave out praise, review quotes, awards, bestseller claims, and marketing phrases (such as "From the revered author..."). Do not invent anything. End on a complete sentence. Fix any missing spaces or typos from the source text. Write about the book directly: never mention "the description" or "the text".
+
 Reply with JSON only:
-{"genres": ["..."], "maturity": "adult", "moods": {"comfort": 0.8, ...all 12 moods}, "blurb": "...", "later_in_series": false}`;
+{"genres": ["..."], "maturity": "adult", "moods": {"comfort": 0.8, ...all 12 moods}, "blurb": "...", "about": "...", "later_in_series": false}`;
 
   for (let attempt = 0; attempt < 3; attempt++) {
     const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -194,6 +198,7 @@ Reply with JSON only:
       maturity: r.maturity,
       moods,
       blurb: typeof r.blurb === "string" ? r.blurb : null,
+      about: typeof r.about === "string" && r.about.length >= 80 ? r.about : null,
       laterInSeries: r.later_in_series === true,
     };
   }

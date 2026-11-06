@@ -1,6 +1,6 @@
 type ButtonProps = {
   children: React.ReactNode;
-  variant: "primary" | "outline" | "tile" | "genre" | "dashed";
+  variant: "primary" | "outline" | "tile" | "genre" | "dashed" | "soft";
   onClick?: () => void;
   selected?: boolean;
   disabled?: boolean;
@@ -32,6 +32,12 @@ export function Button({
     }`,
     dashed:
       "bg-white border-3 border-dashed border-border-light  text-text-primary hover:hover:bg-bg-day/80 hover:hover:bg-bg-day/80",
+    // Soft floating card: white, lifts on hover, light green on hover, green when selected
+    soft: `rounded-2xl border duration-200 text-text-primary shadow-[0_1px_2px_rgba(25,70,48,0.06),0_8px_22px_-10px_rgba(25,70,48,0.16)] hover:-translate-y-[3px] hover:shadow-[0_2px_4px_rgba(25,70,48,0.08),0_16px_30px_-12px_rgba(25,70,48,0.26)] active:translate-y-0 ${
+      selected
+        ? "bg-[#d8ee9c] border-[#9cc93f]"
+        : "bg-white border-border-light hover:bg-[#f1f8df] hover:border-[#dfeebb]"
+    }`,
   };
 
   return (

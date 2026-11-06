@@ -32,11 +32,9 @@ export const MODEL = "claude-haiku-5-5"; // check the current model name in the 
 
 // Which maturity levels each genre may show
 export function allowedMaturity(genre: string | null): string[] {
-  if (genre === "kids") return ["all_ages"];
-  if (genre === "teen") return ["all_ages", "teen"];
+  if (genre === "childlike") return ["all_ages"];
   return ["all_ages", "teen", "adult"];
 }
-
 // Clear statements about suicide or self-harm
 const CRISIS_PATTERNS = [
   /\b(suicid\w*|kill myself|end (my life|it all)|want to die|wanna die|take my own life|better off dead|no reason to live|self[- ]?harm\w*|hurt myself|cut myself)\b/i,

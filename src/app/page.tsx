@@ -1,33 +1,49 @@
 "use client";
 
-import Bubble from "@/components/ui/Bubble";
 import { useState } from "react";
-import { Button } from "@/components/ui/Button";
 import { useRouter } from "next/navigation";
+import { LayoutGrid, Pencil } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 import MoodButton from "@/components/ui/MoodButton";
 import { MOOD_SETS } from "./data/moods";
-import { Pencil } from "lucide-react";
-import Image from "next/image";
 
 const MAX_TEXT = 200;
+
+// All 12 moods shown at once
+const ALL_MOODS = MOOD_SETS.flat();
+
+// Icon circle color per mood (hue), spaced around the color wheel
+const MOOD_HUE: Record<string, number> = {
+  comfort: 345,
+  excited: 38,
+  thrill: 62,
+  calm: 195,
+  think: 255,
+  laugh: 90,
+  escape: 165,
+  nostalgia: 285,
+  boost: 120,
+  romance: 320,
+  learn: 220,
+  courage: 10,
+};
 
 export default function Home() {
   const router = useRouter();
   const [selected, setSelected] = useState<string | null>(null);
-  const [selectedIndex, setSelectedIndex] = useState(0);
   const [showInput, setShowInput] = useState(false);
   const [freeText, setFreeText] = useState("");
-  const currentMoods = MOOD_SETS[selectedIndex];
 
   const hasText = freeText.trim().length > 0;
   // In free-text mode the typed text counts as the choice
   const canContinue = showInput ? hasText : !!selected;
 
-  const bubbleText = showInput
+  // Short line under the title that reacts to what the reader does
+  const hint = showInput
     ? "Go on, I'm listening."
     : selected
       ? "Good choice! Ready when you are."
-      : "Hi! How are you feeling today?";
+      : "Take your time. Pick a mood and I'll prescribe one book.";
 
   function handleContinue() {
     if (showInput) {
@@ -39,92 +55,62 @@ export default function Home() {
   }
 
   return (
-    <div className="flex items-center gap-14 justify-center">
-      {/* left */}
-      <div className="lg:mt-80">
-        <div className="relative w-[420px] h-[420px]">
-          <div className="absolute rounded-full inset-0 bg-bg-tint -z-10" />
-          <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-full flex justify-center">
-            <Bubble>
-              <p className="text-xl text-center font-bold">{bubbleText}</p>
-            </Bubble>
-          </div>
-          <div className="absolute inset-0 flex items-center pb-10 justify-center">
-            <Image
-              src="/caterpillar_first.png"
-              alt="caterpillar"
-              width={380}
-              height={129}
+    <div className="mx-auto w-full max-w-[480px] py-6">
+      <h1 className="text-center font-bold leading-tight whitespace-nowrap text-[clamp(18px,5.4vw,27px)]">
+        How are you feeling today?
+      </h1>
+      <p className="text-center text-text-muted mt-2 mb-4">{hint}</p>
+
+      {showInput ? (
+        <div className="h-[404px] rounded-2xl border border-[#9cc93f] bg-white p-4 flex flex-col shadow-[0_1px_2px_rgba(25,70,48,0.06),0_8px_22px_-10px_rgba(25,70,48,0.16)]">
+          <textarea
+            autoFocus
+            value={freeText}
+            onChange={(e) => setFreeText(e.target.value.slice(0, MAX_TEXT))}
+            placeholder="Long day, and I can't switch off..."
+            className="flex-1 resize-none outline-none text-sm placeholder:text-text-muted placeholder:opacity-50"
+          />
+          <span className="text-xs text-text-muted text-right">
+            {freeText.length} / {MAX_TEXT}
+          </span>
+        </div>
+      ) : (
+        <div className="grid grid-cols-3 gap-3">
+          {ALL_MOODS.map((mood) => (
+            <MoodButton
+              key={mood.key}
+              icon={mood.icon}
+              label={mood.label}
+              description={mood.description}
+              hue={MOOD_HUE[mood.key] ?? 150}
+              selected={selected === mood.key}
+              onClick={() => setSelected(mood.key)}
             />
-          </div>
+          ))}
         </div>
-      </div>
+      )}
 
-      {/* Buttons */}
-      <div className="w-[480px]">
-        {showInput ? (
-          <div className="h-[304px] rounded-2xl border-2 border-green bg-white p-4 flex flex-col">
-            <textarea
-              autoFocus
-              value={freeText}
-              onChange={(e) => setFreeText(e.target.value.slice(0, MAX_TEXT))}
-              placeholder="Long day, and I can't switch off..."
-              className="flex-1 resize-none outline-none text-sm"
-            />
-            <span className="text-xs text-text-muted text-right">
-              {freeText.length} / {MAX_TEXT}
-            </span>
-          </div>
-        ) : (
-          <div className="grid grid-cols-3 gap-3">
-            {currentMoods.map((mood) => (
-              <MoodButton
-                key={mood.key}
-                icon={mood.icon}
-                label={mood.label}
-                description={mood.description}
-                selected={selected === mood.key}
-                onClick={() => setSelected(mood.key)}
-              />
-            ))}
-          </div>
-        )}
+      <Button
+        variant="soft"
+        onClick={() => setShowInput((prev) => !prev)}
+        className="w-full h-[52px] mt-3 flex items-center justify-center gap-2 font-semibold text-green-dark!"
+      >
+        {showInput ? <LayoutGrid size={18} /> : <Pencil size={18} />}
+        {showInput ? "Pick a mood instead" : "Tell me your mood"}
+      </Button>
 
-        <div className="flex gap-3 mt-2">
-          {!showInput && (
-            <Button
-              variant="tile"
-              onClick={() => setSelectedIndex((prev) => (prev === 0 ? 1 : 0))}
-              className="w-full h-[56px]"
-            >
-              {selectedIndex === 0 ? "More" : "Back"}
-            </Button>
-          )}
+      <Button
+        variant="primary"
+        disabled={!canContinue}
+        onClick={handleContinue}
+        className="w-full h-[56px] mt-3"
+      >
+        Choose a genre
+      </Button>
 
-          <Button
-            variant="dashed"
-            selected={showInput}
-            onClick={() => setShowInput((prev) => !prev)}
-            className="w-full h-[56px] flex items-center justify-center"
-          >
-            <Pencil size={18} className="mr-2" />
-            {showInput ? "Pick a mood instead" : "Something else"}
-          </Button>
-        </div>
-
-        <Button
-          variant="primary"
-          disabled={!canContinue}
-          onClick={handleContinue}
-          className="w-full h-[56px] mt-4"
-        >
-          Choose a genre
-        </Button>
-
-        <div className="text-center mt-2">
-          <p>Your first prescription is free. Sign in for 3 a day.</p>
-          <p>Book suggestions only, not medical advice</p>
-        </div>
+      <div className="text-center mt-2 text-sm text-text-muted">
+        <p>Your first prescription is free. Sign in for 3 a day.</p>
+        <p>Book suggestions only, not medical advice</p>
       </div>
     </div>
   );

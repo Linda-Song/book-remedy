@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { ChevronLeft, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -34,6 +35,14 @@ type PrescriptionWithReview = {
   reviews: ReviewRow[] | ReviewRow | null;
 };
 
+// Today as YYYY-MM-DD in local time (toISOString is UTC and can be off by a day)
+function todayLocal() {
+  const d = new Date();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+
 export default function ReviewPage() {
   const router = useRouter();
   const params = useParams();
@@ -52,6 +61,11 @@ export default function ReviewPage() {
   const [quoteText, setQuoteText] = useState("");
   const [reviewText, setReviewText] = useState("");
   const [isPublic, setIsPublic] = useState(false);
+
+  // Which date inputs are usable for each status
+  const startedEnabled = status === "Reading" || status === "Finished";
+  const finishedEnabled = status === "Finished";
+  const today = todayLocal();
 
   useEffect(() => {
     if (!id) return;
@@ -94,6 +108,22 @@ export default function ReviewPage() {
 
     fetchData();
   }, [id]);
+
+  // Change status and keep the dates consistent with it
+  function handleStatusChange(next: (typeof STATUSES)[number]) {
+    setStatus(next);
+    if (next === "To read" || next === "Not for me") {
+      setStarted("");
+      setFinished("");
+    }
+    if (next === "Reading") {
+      setFinished(""); // still ongoing
+      if (!started) setStarted(today);
+    }
+    if (next === "Finished" && !finished) {
+      setFinished(today);
+    }
+  }
 
   // Block a start date that is later than the finish date
   function handleStartedChange(value: string) {
@@ -170,19 +200,19 @@ export default function ReviewPage() {
     <div className="py-10">
       <button
         onClick={() => router.push(`/me/prescriptions/${id}`)}
-        className="flex items-center gap-1 text-sm font-bold text-text-secondary mb-6"
+        className="mb-6 flex items-center gap-1 text-sm font-bold text-text-secondary hover:text-green"
       >
         <ChevronLeft size={16} /> Back to prescription
       </button>
 
-      <h1 className="text-3xl font-extrabold text-text-primary mb-6">
+      <h1 className="mb-6 text-3xl font-extrabold text-text-primary">
         Write a review
       </h1>
 
       <div className="flex gap-16">
         {/* Left: form */}
-        <div className="flex-1 min-w-0 max-w-[560px]">
-          <div className="flex items-center gap-3 mb-6">
+        <div className="min-w-0 max-w-[560px] flex-1">
+          <div className="mb-5 flex items-center gap-3">
             <BookCover
               isbn13={book.books.isbn13}
               googleUrl={book.books.cover_url}
@@ -197,16 +227,16 @@ export default function ReviewPage() {
             </div>
           </div>
 
-          <p className="text-sm font-bold text-text-primary mb-2">Status</p>
-          <div className="flex gap-2 mb-6">
+          <p className="mb-2 text-sm font-bold text-text-primary">Status</p>
+          <div className="mb-4 flex gap-2">
             {STATUSES.map((s) => (
               <button
                 key={s}
-                onClick={() => setStatus(s)}
-                className={`text-sm font-bold px-4 py-2 rounded-xl border ${
+                onClick={() => handleStatusChange(s)}
+                className={`rounded-xl border px-4 py-1.5 text-sm font-bold ${
                   status === s
-                    ? "bg-green text-white border-green"
-                    : "bg-white text-text-primary border-border-light"
+                    ? "border-green bg-green text-white"
+                    : "border-border-light bg-white text-text-primary"
                 }`}
               >
                 {s}
@@ -214,43 +244,46 @@ export default function ReviewPage() {
             ))}
           </div>
 
-          <div className="flex gap-4 mb-6">
+          <div className="mb-4 flex gap-4">
             <div className="flex-1">
-              <p className="text-sm font-bold text-text-primary mb-2">
+              <p className="mb-1.5 text-sm font-bold text-text-primary">
                 Started
               </p>
               <input
                 type="date"
                 value={started}
-                max={finished || undefined}
+                max={finished || today}
+                disabled={!startedEnabled}
                 onChange={(e) => handleStartedChange(e.target.value)}
-                className="w-full h-10 rounded-xl border border-border-light px-3 text-sm"
+                className="h-9 w-full rounded-xl border border-border-light px-3 text-sm disabled:cursor-not-allowed disabled:bg-bg-tint disabled:opacity-50"
               />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-bold text-text-primary mb-2">
-                Finished
+              <p className="mb-1.5 text-sm font-bold text-text-primary">
+                {status === "Reading" ? "Finished (ongoing)" : "Finished"}
               </p>
               <input
                 type="date"
                 value={finished}
                 min={started || undefined}
+                max={today}
+                disabled={!finishedEnabled}
                 onChange={(e) => handleFinishedChange(e.target.value)}
-                className="w-full h-10 rounded-xl border border-border-light px-3 text-sm"
+                className="h-9 w-full rounded-xl border border-border-light px-3 text-sm disabled:cursor-not-allowed disabled:bg-bg-tint disabled:opacity-50"
               />
             </div>
           </div>
 
-          <p className="text-sm font-bold text-text-primary mb-2">
+          <p className="mb-1.5 text-sm font-bold text-text-primary">
             Your rating
           </p>
-          <div className="mb-6">
+          <div className="mb-5">
             <StarRatingInput rating={rating} onChange={setRating} />
           </div>
 
-          <div className="rounded-2xl bg-bg-tint p-4 mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-bold text-green-dark flex items-center gap-1">
+          <div className="mb-5 rounded-2xl bg-bg-tint p-4">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="flex items-center gap-1 text-xs font-bold text-green-dark">
                 <Share2 size={12} /> One line for your share image
               </p>
               <span className="text-xs text-text-muted">
@@ -260,15 +293,17 @@ export default function ReviewPage() {
             <input
               value={shareLine}
               onChange={(e) => setShareLine(e.target.value.slice(0, 80))}
-              className="w-full h-10 rounded-xl border border-green px-3 text-sm bg-white"
+              placeholder="One line about this book"
+              className="h-9 w-full rounded-xl border border-green bg-white px-3 text-sm"
             />
-            <p className="text-xs text-text-muted mt-2">
-              This short line goes on your Instagram image. Keep it sweet.
+            <p className="mt-2 text-xs text-text-muted">
+              Sum up this book in one sentence. You can upload it to your social
+              media.
             </p>
           </div>
 
-          <div className="mb-6">
-            <p className="text-sm font-bold text-text-primary mb-2">
+          <div className="mb-5">
+            <p className="mb-2 text-sm font-bold text-text-primary">
               Favorite quote{" "}
               <span className="font-normal text-text-muted">(optional)</span>
             </p>
@@ -279,19 +314,19 @@ export default function ReviewPage() {
                 placeholder="Page"
                 value={quotePage}
                 onChange={(e) => setQuotePage(e.target.value)}
-                className="w-20 h-10 rounded-xl border border-border-light px-3 text-sm"
+                className="h-9 w-20 rounded-xl border border-border-light px-3 text-sm"
               />
               <input
                 placeholder="A line from the book"
                 value={quoteText}
                 onChange={(e) => setQuoteText(e.target.value)}
-                className="flex-1 h-10 rounded-xl border border-border-light px-3 text-sm"
+                className="h-9 flex-1 rounded-xl border border-border-light px-3 text-sm"
               />
             </div>
           </div>
 
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-2">
+          <div className="mb-5">
+            <div className="mb-2 flex items-center justify-between">
               <p className="text-sm font-bold text-text-primary">
                 Your review{" "}
                 <span className="font-normal text-text-muted">(optional)</span>
@@ -303,11 +338,11 @@ export default function ReviewPage() {
             <textarea
               value={reviewText}
               onChange={(e) => setReviewText(e.target.value.slice(0, 500))}
-              className="w-full h-[90px] rounded-xl border border-border-light p-3 text-sm resize-none"
+              className="h-[90px] w-full resize-none rounded-xl border border-border-light p-3 text-sm"
             />
           </div>
 
-          <div className="flex items-center justify-between mb-6">
+          <div className="mb-5 flex items-center justify-between">
             <div>
               <p className="text-sm font-bold text-text-primary">Public link</p>
               <p className="text-xs text-text-muted">
@@ -317,20 +352,20 @@ export default function ReviewPage() {
             </div>
             <button
               onClick={() => setIsPublic((p) => !p)}
-              className={`w-11 h-6 rounded-full flex items-center px-0.5 ${
+              className={`flex h-6 w-11 items-center rounded-full px-0.5 ${
                 isPublic
-                  ? "bg-green justify-end"
-                  : "bg-border-light justify-start"
+                  ? "justify-end bg-green"
+                  : "justify-start bg-border-light"
               }`}
             >
-              <span className="w-5 h-5 rounded-full bg-white" />
+              <span className="h-5 w-5 rounded-full bg-white" />
             </button>
           </div>
 
           <div className="flex gap-3">
             <Button
               variant="primary"
-              className="h-11 px-6 rounded-xl"
+              className="h-10 rounded-xl px-6"
               onClick={handleSave}
               disabled={saving}
             >
@@ -338,41 +373,60 @@ export default function ReviewPage() {
             </Button>
             <Button
               variant="outline"
-              className="h-11 px-6 rounded-xl flex items-center gap-2"
+              className="flex h-10 items-center gap-2 rounded-xl px-6"
             >
               <Share2 size={16} /> Create share card
             </Button>
           </div>
         </div>
-
-        {/* Right: live share-card preview */}
+        {/* Right: live share-card preview (4:5, pale background) */}
         <div className="flex-shrink-0">
-          <p className="text-xs text-text-muted text-center mb-2">Preview</p>
-          <div className="w-[220px] rounded-2xl bg-green-light p-5">
-            <p className="text-xs font-bold text-text-primary mb-4">
-              [Site name]
-            </p>
-            <BookCover
-              isbn13={book.books.isbn13}
-              googleUrl={book.books.cover_url}
-              title={book.books.title}
-              fluid
-              className="mb-4"
-            />
-            <div className="flex justify-center mb-2">
-              <StarRating rating={rating} size={14} />
+          <p className="mb-2 text-center text-xs text-text-muted">Preview</p>
+          <div className="flex aspect-[4/5] w-[280px] flex-col items-center overflow-hidden rounded-2xl bg-bg-tint px-[18px] py-3.5 font-[family-name:var(--font-noto-sans)]">
+            {/* Brand: mascot icon + name */}
+            <div className="mb-1.5 flex items-center gap-1.5 self-start text-[11px] font-extrabold text-green-dark">
+              <Image
+                src="/images/caterpillar/icon_reading.png"
+                alt=""
+                width={22}
+                height={22}
+              />
+              ReadRemedy
             </div>
-            <p className="text-sm font-bold text-text-primary text-center mb-1 break-words">
-              &quot;{shareLine || "..."}&quot;
-            </p>
-            <p className="text-xs text-text-muted text-center truncate">
-              {book.books.title}
-            </p>
-            <p className="text-xs text-text-muted text-center truncate">
-              {book.books.author}
-            </p>
+
+            <div className="mb-2.5 w-[90px]">
+              <BookCover
+                isbn13={book.books.isbn13}
+                googleUrl={book.books.cover_url}
+                title={book.books.title}
+                fluid
+              />
+            </div>
+
+            <div className="mb-1 flex justify-center leading-none">
+              <StarRating rating={rating} size={14} className="mb-0" />
+            </div>
+
+            {/* Title in Nunito, author in Noto Sans */}
+            <div className="mb-2.5 w-full text-center text-[11px] text-text-muted">
+              <p className="truncate font-[family-name:var(--font-nunito)] text-sm font-extrabold">
+                {book.books.title}
+              </p>
+              <p className="truncate">{book.books.author}</p>
+            </div>
+
+            {/* The line: side padding only. Faint hint until something is typed */}
+            {shareLine ? (
+              <p className="w-full break-words px-3.5 text-center text-xs font-bold leading-snug text-text-primary">
+                &quot;{shareLine}&quot;
+              </p>
+            ) : (
+              <p className="w-full px-3.5 text-center text-xs font-semibold italic text-text-muted opacity-55">
+                Write one line about this book
+              </p>
+            )}
           </div>
-          <p className="text-xs text-text-muted text-center mt-2">
+          <p className="mt-2 text-center text-xs text-text-muted">
             This is what your share card will look like.
           </p>
         </div>

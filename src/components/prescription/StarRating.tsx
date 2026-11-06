@@ -3,10 +3,12 @@ import { Star } from "lucide-react";
 type Props = {
   rating: number;
   size?: number;
+  className?: string; // override the default bottom margin where needed
 };
-export function StarRating({ rating, size = 16 }: Props) {
+
+export function StarRating({ rating, size = 16, className = "mb-3" }: Props) {
   return (
-    <div className="flex gap-0.5 mb-3">
+    <div className={`flex gap-0.5 ${className}`}>
       {Array.from({ length: 5 }).map((_, i) => (
         <Star
           key={i}

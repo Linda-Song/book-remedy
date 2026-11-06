@@ -12,6 +12,8 @@ import { supabase } from "@/server/db/client";
 import { useAuthStore } from "@/features/auth/authStore";
 import { BookCover } from "@/components/books/BookCover";
 import { genreLabel } from "../data/genre";
+import Image from "next/image";
+import { Pill } from "lucide-react";
 
 type PrescriptionData = {
   mood_key: string;
@@ -83,17 +85,17 @@ export default function PrescriptionPage() {
 
   return (
     <div className="flex flex-col items-center">
-      <div className="w-full rounded-t-3xl rounded-b-xl shadow-xl overflow-hidden bg-white border border-border-light">
-        <div className="bg-green px-10 py-3 flex items-center justify-between">
-          <span className="text-white text-sm font-bold tracking-wide">
+      <div className="w-full overflow-hidden rounded-t-3xl rounded-b-xl border border-border-light bg-white shadow-xl">
+        <div className="flex items-center justify-between bg-green px-10 py-3">
+          <span className="text-sm font-bold tracking-wide text-white">
             PRESCRIPTION
           </span>
-          <span className="text-white/80 text-xs">No. {id?.slice(0, 8)}</span>
+          <span className="text-xs text-white/80">No. {id?.slice(0, 8)}</span>
         </div>
 
-        <div className="flex p-10 gap-16">
+        <div className="flex gap-[58px] p-10">
           {/* book cover, Link */}
-          <div className="flex flex-col items-center flex-shrink-0">
+          <div className="flex flex-shrink-0 flex-col items-center">
             <BookCover
               isbn13={data.books.isbn13}
               googleUrl={data.books.cover_url}
@@ -105,25 +107,24 @@ export default function PrescriptionPage() {
               target="_blank"
               rel="noopener noreferrer"
             >
-              <Button variant="outline" className="rounded-sm h-8 w-[150px]">
+              <Button variant="outline" className="h-8 w-[150px] rounded-sm">
                 Find on Kindle
               </Button>
             </a>
           </div>
 
-          {/* mood key */}
-          <div className="flex flex-col flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex gap-2">
-                <span className="text-xs font-bold px-3 py-1 rounded-full bg-bg-tint text-green-dark">
-                  {data.mood_key}
+          {/* Right column: 18px right inset = the tint box overhang,
+              so the box ends exactly on the card's padding line */}
+          <div className="flex min-w-0 flex-1 flex-col pr-[18px]">
+            <div className="mb-4 flex gap-2">
+              <span className="rounded-full bg-bg-tint px-3 py-1 text-xs font-bold text-green-dark">
+                {data.mood_key}
+              </span>
+              {data.genre_key && (
+                <span className="rounded-full bg-green-light px-3 py-1 text-xs font-bold text-text-primary">
+                  {genreLabel(data.genre_key)}
                 </span>
-                {data.genre_key && (
-                  <span className="text-xs font-bold px-3 py-1 rounded-full bg-green-light text-text-primary">
-                    {genreLabel(data.genre_key)}
-                  </span>
-                )}
-              </div>
+              )}
             </div>
 
             <BookDetail
@@ -135,16 +136,26 @@ export default function PrescriptionPage() {
 
             <WhyThisBook reason={data.reason} />
 
-            <p className="text-xs text-text-secondary">
-              🕐 <span className="font-bold">Dosage</span> {data.dosage}
+            {/* Dosage: more room above, thin divider, pill icon */}
+            <p className="mt-7 flex items-center gap-1.5 border-t border-border-light pt-3.5 text-xs text-text-secondary">
+              <Pill size={14} className="shrink-0 text-text-primary" />
+              <span>
+                <span className="font-bold text-text-primary">Dosage</span>{" "}
+                {data.dosage}
+              </span>
             </p>
           </div>
         </div>
       </div>
 
-      <div className="flex items-center justify-between mt-10 w-full border border-border-light rounded-2xl h-20 px-8 bg-white">
+      <div className="mt-10 flex h-20 w-full items-center justify-between rounded-2xl border border-border-light bg-white px-8">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-9 rounded-full bg-green-light" />
+          <Image
+            src="/images/caterpillar/icon_reading.png"
+            alt=""
+            width={56}
+            height={56}
+          />
           <div>
             <p className="text-sm font-bold text-text-primary">
               Do you like this prescription?
@@ -157,14 +168,14 @@ export default function PrescriptionPage() {
         <div className="flex gap-2.5">
           <Button
             variant="primary"
-            className="h-10 px-10 rounded-xl"
+            className="h-10 rounded-xl px-10"
             onClick={() => handleAnswer("yes")}
           >
             Yes
           </Button>
           <Button
             variant="outline"
-            className="h-10 px-10 rounded-xl"
+            className="h-10 rounded-xl px-10"
             onClick={() => handleAnswer("no")}
           >
             No
@@ -172,7 +183,7 @@ export default function PrescriptionPage() {
         </div>
       </div>
 
-      <p className="text-center text-xs text-text-muted py-6">
+      <p className="py-6 text-center text-xs text-text-muted">
         Book suggestions only, not medical advice.
       </p>
 
